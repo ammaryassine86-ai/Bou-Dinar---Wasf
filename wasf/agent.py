@@ -176,7 +176,9 @@ def review_flags(segment) -> list[str]:
         if (segment.brouillon_ia or "").strip():
             flags.append("confiance de l'IA inconnue")
     elif segment.confiance_ia < LOW_CONFIDENCE:
-        flags.append(f"IA peu sûre ({round(segment.confiance_ia * 100)} %)")
+        # The model's own mark, not a probability of being right: said as a mark it gives itself.
+        mark = f"{round(segment.confiance_ia, 2):g}".replace(".", ",")
+        flags.append(f"IA peu sûre (elle se note {mark} sur 1)")
     return flags
 
 
@@ -297,6 +299,8 @@ class DescriberAgent:
             segment.verifications = [{"niveau": "erreur", "code": "fournisseur",
                                       "message": "Aucun brouillon : le fournisseur d'IA a échoué."}]
             self.log(f"  {segment.id} : échec du fournisseur ({exc})")
+            if getattr(exc, "fatal", False):   # every next passage would fail the same way
+                raise
             return False
         text = parsed["description"]
         # What the model saw stays apart from what it supposes; the text-only revisions never

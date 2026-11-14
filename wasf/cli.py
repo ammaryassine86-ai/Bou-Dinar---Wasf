@@ -21,7 +21,7 @@ from .pipeline import (
 )
 from .project import ProjectFileError
 from .providers import PROVIDERS, ProviderError
-from .tts import ENGINES, TTSError
+from .tts import ENGINES, VOICE_SOURCES, TTSError
 
 KNOWN_ERRORS = (MediaError, IntentError, RightsError, ProviderError, TTSError, RenderError,
                 ProjectExistsError, FileNotFoundError, SubtitleError, ResumeError,
@@ -111,6 +111,13 @@ def _parser() -> argparse.ArgumentParser:
     e.add_argument("--couper-silences", action="store_true",
                    help="Retire le silence avant et après chaque voix (jamais au milieu), "
                         "par exemple au début et à la fin d'enregistrements au téléphone.")
+    e.add_argument("--source-voix", choices=tuple(VOICE_SOURCES),
+                   help="Moteur « humain » : ce que sont les enregistrements, selon l'équipe "
+                        "(humaine, synthese ou inconnue). Repris comme une déclaration : Wasf "
+                        "ne peut pas le vérifier.")
+    e.add_argument("--voix-de",
+                   help="Avec --source-voix : qui a prêté sa voix (avec son accord), ou quel "
+                        "outil a fait les voix.")
     e.add_argument("--sortie", type=Path)
     return parser
 
@@ -160,7 +167,8 @@ def main(argv: list[str] | None = None) -> int:
                                  annonce=not args.sans_annonce,
                                  sans_validation_realisateur=args.sans_validation_realisateur,
                                  sortie=args.sortie,
-                                 couper_silences=args.couper_silences)
+                                 couper_silences=args.couper_silences,
+                                 source_voix=args.source_voix, voix_de=args.voix_de)
             outputs = render(args.projet, opts)
             print("Fichiers produits :")
             for name, path in outputs.items():

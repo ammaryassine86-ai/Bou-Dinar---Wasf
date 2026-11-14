@@ -29,14 +29,36 @@ class TTSError(RuntimeError):
     """The voice could not be produced."""
 
 
-def describe_voice(engine: str, voix: str | None, langue: str) -> dict:
+# What a team can say about the recordings it supplies (engine « humain »). Wasf cannot check
+# it, so it keeps it as the team's declaration, never as something it verified.
+VOICE_SOURCES = {"humaine": "voix humaines", "synthese": "voix de synthèse",
+                 "inconnue": "origine inconnue"}
+
+
+def declared_source(source: str | None, par: str | None) -> dict:
+    """The team's declaration about the recordings it supplied: human voices, synthetic voices
+    made elsewhere, or unknown; and who lent their voice (with their consent) or which tool
+    made them. Recorded as said, marked as not verified."""
+    if source and source not in VOICE_SOURCES:
+        raise TTSError(f"Source de voix inconnue : {source}. Choisir parmi : "
+                       f"{', '.join(VOICE_SOURCES)}.")
+    return {"source": source or "non_declaree", "par": (par or "").strip() or None,
+            "verifiee_par_wasf": False,
+            "remarque": ("déclaration de l'équipe, non vérifiée par Wasf" if source
+                         else "l'équipe n'a pas déclaré l'origine des enregistrements")}
+
+
+def describe_voice(engine: str, voix: str | None, langue: str, source: str | None = None,
+                   par: str | None = None) -> dict:
     """Who speaks the descriptions, for the transparency report and the credits: a person, a
     synthetic voice (which one, from which service) or a test signal. Names only: never a
-    path from this computer."""
+    path from this computer. source and par: the team's declaration about supplied recordings
+    (engine « humain » only, see declared_source)."""
     if engine == "humain":   # Wasf cannot tell who or what made the files: it says so
         return {"type": "enregistrements_fournis", "moteur": engine,
                 "libelle": "enregistrements fournis par l'équipe (moteur « humain »), "
-                           "sans synthèse vocale par Wasf"}
+                           "sans synthèse vocale par Wasf",
+                "declaration": declared_source(source, par)}
     if engine == "bip":
         return {"type": "signal_de_test", "moteur": engine,
                 "libelle": "signal de test, pas une voix (essai technique)"}

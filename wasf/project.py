@@ -79,6 +79,9 @@ class Project:
     emotions: str = "nuancees"      # how emotions may be named: nuancees | signes (emotions.py)
     mots_par_seconde: float = 0.0   # speaking rate behind the word budgets (0: the language's)
     encodage_sous_titres: str = ""  # how the subtitle file was read (utf-8, cp1256…), "" if none
+    # The video file's identity at preparation (media.fingerprint): the export compares it, to
+    # say when the film was replaced, even by one of the same length. "" in older projects.
+    empreinte_film: str = ""
     # The drafting run: {"etat": "en_cours" | "terminee", dates…}. Saved after every passage, so
     # an interrupted run can go on (wasf preparer --reprendre) without paying twice.
     preparation: dict = field(default_factory=dict)

@@ -1,6 +1,7 @@
 """Thin wrappers around FFmpeg / ffprobe, plus WAV helpers (numpy only)."""
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import subprocess
@@ -79,6 +80,24 @@ def video_size(path: Path) -> tuple[int, int, float]:
                 fps = 25.0
             return int(stream["width"]), int(stream["height"]), fps or 25.0
     raise MediaError(f"Aucune piste vidéo dans {path}")
+
+
+FINGERPRINT_SLICE = 1 << 20   # 1 MiB read at the start, the middle and the end of the file
+
+
+def fingerprint(path: Path) -> str:
+    """A quick identity for a video file: its size and a SHA-256 of three 1 MiB slices (start,
+    middle, end). Instant even for a feature film, and any new edit or re-encode changes it.
+    It says the file changed, not how: a re-encode of the same edit changes it too."""
+    path = Path(path)
+    size = path.stat().st_size
+    digest = hashlib.sha256(str(size).encode())
+    with path.open("rb") as handle:
+        for start in (0, max(0, size // 2 - FINGERPRINT_SLICE // 2),
+                      max(0, size - FINGERPRINT_SLICE)):
+            handle.seek(start)
+            digest.update(handle.read(FINGERPRINT_SLICE))
+    return f"{size}:{digest.hexdigest()[:32]}"
 
 
 def extract_frame(video: Path, t: float, out_jpg: Path, max_width: int = 768) -> Path:

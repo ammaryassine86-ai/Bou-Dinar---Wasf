@@ -229,7 +229,9 @@ mesure ce qu'il peut, dit ce qu'il ne peut pas mesurer, et limite le calcul dès
 calcul. Si CodeCarbon est installé (`pip install -e ".[energie]"`), il ajoute une estimation de
 l'énergie consommée par l'ordinateur, en kWh, et des émissions en grammes de CO₂, calculées avec
 le mix électrique tunisien. Ces mesures sont écrites dans `projet.json` et dans
-`rapport_transparence.json` (code : `wasf/energy.py`).
+`rapport_transparence.json` (code : `wasf/energy.py`). Le rapport dit aussi ce que la mesure ne
+couvre pas (`energie_portee`) et compte les appels au modèle, avec images ou en texte seul
+(`appels_au_modele`).
 
 **Ce qu'il ne peut pas mesurer.** La consommation des serveurs d'un fournisseur en ligne (Gemini,
 Claude, GPT) ne lui est pas accessible. Comme ordre de grandeur, Google estime qu'une requête texte
@@ -392,6 +394,12 @@ réseau), `--refaire-echecs` refait **seulement** ceux-là, sauf ceux qu'une per
 la main depuis. Tant que la préparation n'est pas terminée, l'éditeur est en lecture seule et
 l'export est refusé, pour qu'aucune modification ne se perde.
 
+Une erreur qui reviendrait à chaque passage (clé refusée, modèle inconnu, quota du jour ou crédit
+épuisé, Ollama éteint) arrête la préparation tout de suite, au lieu d'échouer sur tous les
+passages l'un après l'autre. Les passages déjà écrits sont gardés et l'historique dit pourquoi
+la préparation s'est arrêtée. Une fois le problème réglé, relancez avec
+`--reprendre --refaire-echecs`.
+
 ```bash
 wasf preparer film.mp4 --intention intention.yaml --sous-titres film.srt --fournisseur gemini --reprendre
 wasf preparer film.mp4 --intention intention.yaml --sous-titres film.srt --fournisseur gemini --refaire-echecs
@@ -433,7 +441,7 @@ Pour un film réel, utilisez une offre payante qui exclut cet usage, ou Ollama :
 
 L'offre gratuite limite aussi le nombre de requêtes par minute et par jour. Quand Gemini répond
 « trop de requêtes » pour la minute, Wasf attend le délai qu'il indique et réessaie (deux fois au
-plus) ; de même, après une courte pause, quand les serveurs de Google sont surchargés ; quand le quota du jour est épuisé, il le dit et passe au passage suivant. Une requête sans
+plus) ; de même, après une courte pause, quand les serveurs de Google sont surchargés ; quand le quota du jour est épuisé, il arrête la préparation (voir « Préparation interrompue »). Une requête sans
 réponse au bout de deux minutes est abandonnée : le passage reste à écrire, le reste du film continue.
 Plus tard, `--refaire-echecs` redemande à l'IA ces passages-là seulement.
 
@@ -458,6 +466,17 @@ saturé, voix à plus de 6 dB de la médiane des autres, parole beaucoup plus co
 (mauvais fichier ?), plus d'une seconde de silence avant ou après la parole. Wasf ne corrige rien
 de lui-même. `--couper-silences` retire, sur demande, le silence avant et après chaque voix,
 jamais au milieu : utile pour des enregistrements faits au téléphone.
+
+**Origine des voix.** Wasf ne peut pas savoir qui a fait les fichiers donnés au moteur
+« humain ». L'équipe peut le déclarer : `--source-voix humaine`, `synthese` ou `inconnue`, et
+`--voix-de "…"` pour qui a prêté sa voix (avec son accord) ou quel outil a fait les voix. Le
+rapport et les crédits le reprennent comme une déclaration de l'équipe, marquée non vérifiée
+par Wasf ; sans déclaration, ils disent qu'aucune n'a été faite. Avec une voix de synthèse, ces
+options sont refusées : Wasf sait déjà laquelle et la nomme lui-même.
+
+```bash
+wasf exporter essai/projet.json --voix-moteur humain --enregistrements voix/ --source-voix humaine --voix-de "Riadh"
+```
 
 ## Le fichier d'intention de la réalisation
 
@@ -661,7 +680,7 @@ Détails, limites et engagements : [`docs/ETHIQUE_360.md`](docs/ETHIQUE_360.md).
 | `piste_audiodecrite.wav` | Le son du film mixé avec les descriptions |
 | `voix_seule.wav` | Les descriptions seules, pour une diffusion en salle (application, casque) |
 | `audiodescription.vtt` / `.srt` | Les descriptions en texte, avec la mention IA |
-| `rapport_transparence.json` | Qui a fait quoi, part du texte modifiée par un humain, énergie ; la voix utilisée (`voix_utilisee`) ; pour chaque voix, sa durée, sa pause, son niveau, son éventuel dépassement et ses alertes ; le contrôle des voix (`controle_audio`) : contrôles faits, problèmes trouvés avec la mesure, le seuil et quoi faire |
+| `rapport_transparence.json` | Qui a fait quoi, part du texte modifiée par un humain, énergie ; la voix utilisée (`voix_utilisee`) ; pour chaque voix, sa durée, sa pause, son niveau, son éventuel dépassement et ses alertes ; le contrôle des voix (`controle_audio`) : contrôles faits, problèmes trouvés avec la mesure, le seuil et quoi faire ; la déclaration de l'équipe sur l'origine des voix ; ce que la mesure d'énergie couvre et laisse de côté (`energie_portee`) et les appels au modèle (`appels_au_modele`) ; le contrôle du film (`controle_du_film`) : même fichier qu'à la préparation ou non |
 | `credits.txt` | Crédits lisibles par toute l'équipe, avec la voix utilisée et le résultat du contrôle des voix |
 
 ## Structure du dépôt
@@ -686,9 +705,10 @@ wasf/
 ├── pipeline.py      étapes « préparer » et « exporter »
 ├── demo.py          clip de démonstration sans droits de tiers
 └── cli.py           commandes wasf demo | preparer | relire | exporter
-tests/               255 tests, dont le format exact des requêtes vers chaque fournisseur
+tests/               292 tests, dont le format exact des requêtes vers chaque fournisseur
 examples/            fichier d'intention commenté
-docs/                éthique, protocole de test des émotions, correctifs des lots 1 et 2, captures
+docs/                éthique, protocole de test des émotions, correctifs des lots 1 et 2, état
+                     complet des limites (lot 3), captures
 ```
 
 ## Tests
@@ -716,6 +736,13 @@ muette, saturée, trop faible, trop courte, silences ; une pause voulue ne décl
 (voix utilisée et contrôle des voix dans le rapport) et `test_project_file.py` (`projet.json`
 abîmé). Détails et résultats : [`docs/LOT2_CORRECTIFS.md`](docs/LOT2_CORRECTIFS.md).
 
+Ceux du lot 3 aussi : `test_fatal_errors.py` (arrêt sur une erreur qui reviendrait à chaque
+passage), `test_voice_source.py` (origine des voix déclarée), `test_energy_scope.py` (portée de la
+mesure d'énergie, appels au modèle, note de confiance) et `test_film_fingerprint.py` (film
+remplacé, même de même durée). L'état complet des quinze limites, corrigées ou non, et ce qui
+demande encore de vrais enregistrements ou des personnes :
+[`docs/COMPREHENSIVE_LIMITATIONS_AND_IMPROVEMENTS.md`](docs/COMPREHENSIVE_LIMITATIONS_AND_IMPROVEMENTS.md).
+
 `tests/test_emotion_scenarios.py` rejoue huit scènes, plus un regard évité et une scène à deux
 lectures, (conversation, pleurs, colère, sourire qui
 cache un malaise, geste montré du doigt, dispute, joie qui tourne à la tristesse, scène ambiguë)
@@ -737,8 +764,9 @@ descriptions aident vraiment des spectateurs aveugles et malvoyants :
   bien trouvées, mais la vérification « répète le dialogue » compare des mots : elle ne repère
   pas une description en derja qui reprend une réplique sous-titrée en français.
 - Les voix de synthèse sont encore faibles en derja : la voix humaine est recommandée.
-- La confiance que l'IA s'attribue est un indice, pas une garantie : un passage non signalé peut
-  contenir une erreur. La réalisation reste responsable de ce qu'elle approuve.
+- La confiance que l'IA s'attribue est un indice, pas une garantie : l'éditeur la montre comme la
+  note qu'elle se donne, pas comme une probabilité. Un passage non signalé peut contenir une
+  erreur. La réalisation reste responsable de ce qu'elle approuve.
 - Visages et gestes : un modèle peut mal lire un visage, surtout sur quatre images fixes ; un
   geste très bref entre deux images lui échappe. Wasf ne suit pas les visages d'un plan à
   l'autre, par choix : la continuité repose sur les noms donnés par la réalisation. Les
@@ -753,7 +781,9 @@ descriptions aident vraiment des spectateurs aveugles et malvoyants :
   natif·ve sont listés dans [`docs/DERJA_A_RELIRE.md`](docs/DERJA_A_RELIRE.md). La justesse sur de
   vraies scènes n'a pas encore été mesurée (protocole dans `docs/TESTS_EMOTIONS.md`).
 - L'énergie mesurée est locale : celle des serveurs d'un fournisseur en ligne n'est pas incluse.
-- Une erreur passagère du fournisseur (quota de la minute, réseau) n'est pas toujours retentée :
+  Le rapport le dit (`energie_portee`) et compte les appels au modèle, sans rien estimer.
+- Une erreur qui reviendrait à chaque passage arrête la préparation. Une erreur passagère du
+  fournisseur (quota de la minute, réseau) n'est pas toujours retentée :
   Wasf attend et réessaie avec Gemini, les bibliothèques de Claude et d'OpenAI réessaient deux fois
   d'elles-mêmes, Ollama jamais. Un passage qui échoue quand même reste vide et signalé, et
   `--refaire-echecs` le refait ensuite.
@@ -764,11 +794,13 @@ descriptions aident vraiment des spectateurs aveugles et malvoyants :
 - Le contrôle des voix mesure le son, pas la prononciation : une voix bien audible peut mal dire
   un mot de derja. Ses seuils (−40 dBFS, 6 dB, 40 %, 1 s) sont des choix de départ, pas encore
   réglés sur de vrais enregistrements de l'équipe.
-- Wasf ne peut pas savoir qui a fait les fichiers donnés au moteur « humain » : le rapport dit
-  « enregistrements fournis par l'équipe ». Si l'un d'eux vient d'une voix de synthèse, c'est à
-  l'équipe de le dire.
-- Seule la durée de la vidéo est comparée à celle de la préparation : un autre montage de même
-  durée n'est pas repéré.
+- Wasf ne peut pas savoir qui a fait les fichiers donnés au moteur « humain » : l'équipe peut le
+  déclarer (`--source-voix`, `--voix-de`), et le rapport le reprend comme une déclaration non
+  vérifiée.
+- La vidéo est comparée à celle de la préparation par sa durée et par une empreinte du fichier.
+  Un autre fichier de même durée est signalé sans bloquer l'export, car une copie réencodée du
+  même montage change aussi l'empreinte : à la réalisation de vérifier. Les projets préparés
+  avant ce contrôle n'ont que la durée.
 
 ## Feuille de route
 

@@ -172,7 +172,9 @@ def test_review_flags_decide_what_the_director_checks():
     seg.verifications = run_checks(seg.texte, budget=9, avoid=[], dialogue="", langue="fr")
     assert review_flags(seg) == [] and validable_in_one_click(seg)
     seg.confiance_ia = 0.3  # the model says it is unsure
-    assert review_flags(seg) == ["IA peu sûre (30 %)"] and not validable_in_one_click(seg)
+    # Lot 3, point G: the model's own mark, never shown like a probability of being right.
+    assert review_flags(seg) == ["IA peu sûre (elle se note 0,3 sur 1)"]
+    assert not validable_in_one_click(seg)
     seg.confiance_ia = 0.9
     seg.texte = seg.brouillon_ia = "Elle semble inquiète."
     seg.verifications = run_checks(seg.texte, budget=9, avoid=[], dialogue="", langue="fr")

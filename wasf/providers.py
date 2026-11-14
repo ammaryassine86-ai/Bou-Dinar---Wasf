@@ -33,7 +33,45 @@ DEFAULT_MODELS = {
 
 
 class ProviderError(RuntimeError):
-    """The provider is not installed, not configured, or returned an error."""
+    """The provider is not installed, not configured, or returned an error.
+
+    fatal: the same error would come back for every passage (key refused, unknown model, the
+    day's quota or the account's credit used up, local server not running). Preparation then
+    stops at once instead of failing every passage one after the other (see is_fatal)."""
+
+    def __init__(self, message: str = "", *, fatal: bool = False):
+        super().__init__(message)
+        self.fatal = fatal
+
+
+# Errors that no later passage can escape. Rate limits per minute, busy servers and timeouts
+# are not among them: they clear up, and the passage can be redone with --refaire-echecs.
+FATAL_STATUS = {401, 403, 404}   # key refused, access denied, unknown model or address
+FATAL_MARKERS = ("PerDay",                                  # Gemini: the day's quota is used up
+                 "API_KEY_INVALID", "API key not valid",    # Gemini: wrong key (sent as a 400)
+                 "insufficient_quota",                      # OpenAI: no credit left
+                 "credit balance")                          # Claude: no credit left
+
+
+def _status(exc: BaseException) -> int | None:
+    """The HTTP status of an SDK or requests error, when it carries one."""
+    for value in (getattr(exc, "status_code", None), getattr(exc, "code", None),
+                  getattr(getattr(exc, "response", None), "status_code", None)):
+        if isinstance(value, int) and not isinstance(value, bool):
+            return value
+    return None
+
+
+def is_fatal(exc: BaseException) -> bool:
+    """True when trying the next passage would only meet the same error: a refused key, an
+    unknown model, an exhausted daily quota or credit, or a local server (Ollama) that does not
+    answer at all. Read from the HTTP status and from the providers' own error codes."""
+    if isinstance(exc, requests.ConnectionError):
+        return True
+    if _status(exc) in FATAL_STATUS:
+        return True
+    text = str(exc)
+    return any(marker in text for marker in FATAL_MARKERS)
 
 
 class Provider:
@@ -197,7 +235,7 @@ class GeminiProvider(Provider):
             except Exception as exc:  # network, quota, timeout, wrong model name…
                 retry = _retry_wait(exc, attempt) if attempt < RATE_LIMIT_RETRIES else None
                 if retry is None:
-                    raise ProviderError(_gemini_error(exc)) from exc
+                    raise ProviderError(_gemini_error(exc), fatal=is_fatal(exc)) from exc
                 seconds, why = retry
                 self.notify(f"Gemini : {why}, nouvel essai dans {round(seconds)} s…")
                 _wait(seconds)
@@ -230,7 +268,7 @@ class AnthropicProvider(Provider):
                 model=self.model, max_tokens=400, system=system,
                 messages=[{"role": "user", "content": content}])
         except Exception as exc:
-            raise ProviderError(f"Claude : {exc}") from exc
+            raise ProviderError(f"Claude : {exc}", fatal=is_fatal(exc)) from exc
         self._saw(getattr(message, "model", None))
         return "".join(getattr(block, "text", "") for block in message.content)
 
@@ -268,7 +306,7 @@ class OpenAIProvider(Provider):
                 messages=[{"role": "system", "content": system},
                           {"role": "user", "content": content}])
         except Exception as exc:
-            raise ProviderError(f"OpenAI : {exc}") from exc
+            raise ProviderError(f"OpenAI : {exc}", fatal=is_fatal(exc)) from exc
         self._saw(getattr(response, "model", None))
         return response.choices[0].message.content or ""
 
@@ -302,7 +340,8 @@ class OllamaProvider(Provider):
             return data["message"]["content"]
         except requests.RequestException as exc:
             raise ProviderError(f"Ollama ({self.base_url}) : {exc}. "
-                                f"Lancez « ollama pull {self.model} » puis « ollama serve ».") from exc
+                                f"Lancez « ollama pull {self.model} » puis « ollama serve ».",
+                                fatal=is_fatal(exc)) from exc
         except (KeyError, ValueError) as exc:
             raise ProviderError(f"Ollama : réponse inattendue ({exc}).") from exc
 

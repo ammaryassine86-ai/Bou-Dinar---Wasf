@@ -45,6 +45,44 @@ def is_simulation(project: Project) -> bool:
     return project.fournisseur == "mock"
 
 
+def model_calls(project: Project) -> dict:
+    """The calls to the model behind the texts now in the project, read from each passage's
+    trace: drafts and second looks send images, revisions only text. Calls made by an earlier
+    run whose passages were redone since are not in the traces any more: not counted."""
+    with_images = text_only = failed = 0
+    for seg in project.segments:
+        for step in seg.journal_agent or []:
+            name = str(step.get("etape", ""))
+            if name in ("brouillon", "seconde lecture"):
+                with_images += 1
+            elif name.startswith("revision"):
+                text_only += 1
+            elif name == "erreur":
+                failed += 1
+    return {"avec_images": with_images, "texte_seul": text_only, "en_echec": failed,
+            "reels": not is_simulation(project),
+            "remarque": "appels qui ont produit les textes actuels ; ceux d'une préparation "
+                        "refaite depuis ne sont pas recomptés"}
+
+
+def energy_scope(project: Project) -> dict:
+    """What the energy figures cover and what they leave out: said, never estimated."""
+    if is_simulation(project):
+        outside = "rien : simulation hors ligne, aucun modèle n'a tourné"
+    elif project.fournisseur == "ollama":
+        outside = ("rien si Ollama tourne sur cet ordinateur (sa consommation est alors dans la "
+                   "mesure locale) ; s'il tourne sur une autre machine, celle-ci n'est pas mesurée")
+    else:
+        outside = (f"les serveurs du fournisseur ({project.fournisseur}), auxquels Wasf n'a pas "
+                   "accès : leur consommation n'est pas mesurée")
+    if project.seconde_lecture and project.seconde_lecture != "même modèle":
+        outside += (f" ; la seconde lecture ({project.seconde_lecture}) non plus, si elle "
+                    "tourne en ligne")
+    return {"mesure": "cet ordinateur, pendant la préparation et l'export (estimation CodeCarbon "
+                      "si elle est installée, sinon la durée seulement)",
+            "hors_mesure": outside}
+
+
 def label_text(project: Project, brouillon: bool = False) -> str:
     """The sentence spoken before the film and written in every export.
 
@@ -120,7 +158,8 @@ def audio_summary(problems: list[dict]) -> dict:
 
 
 def transparency_report(project: Project, placed: list[dict], brouillon: bool,
-                        voix: dict | None = None, controles: list[dict] | None = None) -> dict:
+                        voix: dict | None = None, controles: list[dict] | None = None,
+                        controle_film: dict | None = None) -> dict:
     """Who did what: how much of the final text came from the AI, how much a person changed,
     how many passages were validated in one click, who speaks the descriptions, and what the
     voice checks found. Left empty (None) when not measured, never guessed."""
@@ -177,6 +216,7 @@ def transparency_report(project: Project, placed: list[dict], brouillon: bool,
                                 r.get("visible") == "non" for s in active
                                 for r in s.seconde_lecture)},
         "duree_film_s": project.duree,
+        "controle_du_film": controle_film,
         "voix_utilisee": voix,
         "voix": placed,
         # Only possible in a working version: the final export refuses a voice that overruns
@@ -184,6 +224,8 @@ def transparency_report(project: Project, placed: list[dict], brouillon: bool,
         "voix_hors_pause": [p["id"] for p in placed if p.get("deborde") or p.get("chevauche")],
         "controle_audio": audio_summary(controles) if controles is not None else None,
         "energie": project.energie,
+        "energie_portee": energy_scope(project),
+        "appels_au_modele": model_calls(project),
     }
 
 
@@ -200,10 +242,25 @@ def _emotions_line(emotions: dict) -> str:
             + (f" ({count} passage(s))" if count else ""))
 
 
+def _declaration_text(declaration: dict | None) -> str:
+    """The team's word about supplied recordings, said as a declaration, never as a fact."""
+    if not declaration:
+        return ""
+    source, par = declaration.get("source"), declaration.get("par")
+    who = f" ({par})" if par else ""
+    if source == "humaine":
+        return f" ; déclarés comme voix humaines{who}, déclaration non vérifiée par Wasf"
+    if source == "synthese":
+        return f" ; déclarés comme voix de synthèse{who}, déclaration non vérifiée par Wasf"
+    if source == "inconnue":
+        return f" ; origine déclarée inconnue{who}"
+    return " ; origine non déclarée par l'équipe"
+
+
 def _voice_line(voice: dict | None) -> str:
     if not voice:
         return ""
-    line = f"Voix : {voice['libelle']}"
+    line = f"Voix : {voice['libelle']}" + _declaration_text(voice.get("declaration"))
     if voice.get("silences_coupes"):
         line += " ; silence coupé avant et après chaque voix"
     return line

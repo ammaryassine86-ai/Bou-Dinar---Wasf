@@ -19,7 +19,7 @@ from .gaps import ENCODING_NAMES, load_subtitles, neighbours, plan_windows
 from .intent import LANGUAGES, load_intent
 from .mix import VoiceTimingError, build_mix
 from .project import Project, Segment, load_project, now_iso, save_project
-from .providers import get_provider
+from .providers import ProviderError, get_provider
 from .continuity import character_memory
 from .story import story_so_far
 from .textnorm import dialogue_language
@@ -144,6 +144,25 @@ def _models(project: Project, provider, checker) -> list[str]:
     return sorted(seen | (checker.models_seen if checker else set()))
 
 
+def _stop_on_fatal(project: Project, project_file: Path, seg: Segment, exc: ProviderError,
+                   provider, checker) -> None:
+    """A fatal provider error (refused key, unknown model, used-up quota…): keep every finished
+    passage, record why the run stopped, and stop with what to do next. Never returns."""
+    seg.etat_ia = "echec"
+    project.modeles_utilises = _models(project, provider, checker)
+    project.log("arret_fournisseur", passage=seg.id, raison=str(exc))
+    save_project(project, project_file)
+    written = sum(s.etat_ia == "fait" for s in project.segments)
+    left = sum(s.etat_ia == "a_faire" for s in project.segments)
+    raise ProviderError(
+        f"Préparation arrêtée au passage {seg.id} : {exc}\n"
+        "Cette erreur reviendrait à chaque passage : Wasf s'arrête au lieu de tous les essayer. "
+        f"{written} passage(s) écrit(s) sont enregistrés dans {project_file}, {left} restent à "
+        "faire. Une fois le problème réglé, relancez la même commande avec --reprendre "
+        "--refaire-echecs : les passages déjà écrits ne seront pas redemandés à l'IA.",
+        fatal=True) from exc
+
+
 def _draft(project: Project, project_file: Path, todo: list[str], agent: DescriberAgent,
            cues, provider, checker, log: Callable[[str], None]) -> dict:
     """Let the agent draft the passages in `todo`, in film order, and save the project after
@@ -160,10 +179,13 @@ def _draft(project: Project, project_file: Path, todo: list[str], agent: Describ
                 images = [(out_dir / rel).read_bytes() for rel in seg.images]
                 # The story so far: earlier dialogue and descriptions, never what comes next.
                 earlier = [(s.debut, s.texte) for s in segments[:i - 1] if s.texte]
-                drafted = agent.describe(seg, images, story_so_far(cues, earlier, seg.debut),
-                                         previous=earlier[-1][1] if earlier else "",
-                                         continuity=character_memory(segments[:i - 1],
-                                                                     agent.names))
+                try:
+                    drafted = agent.describe(seg, images, story_so_far(cues, earlier, seg.debut),
+                                             previous=earlier[-1][1] if earlier else "",
+                                             continuity=character_memory(segments[:i - 1],
+                                                                         agent.names))
+                except ProviderError as exc:   # describe() only lets the fatal ones through
+                    _stop_on_fatal(project, project_file, seg, exc, provider, checker)
                 seg.etat_ia = "fait" if drafted else "echec"
                 project.modeles_utilises = _models(project, provider, checker)
                 save_project(project, project_file)          # checkpoint after every passage
@@ -405,6 +427,7 @@ def prepare(video: Path, intention: Path, *, sous_titres: Path | None = None,
                       personnages=intent.personnages, lexique=intent.lexique,
                       exemples=intent.exemples, emotions=intent.emotions, segments=segments,
                       mots_par_seconde=rate, encodage_sous_titres=encoding,
+                      empreinte_film=media.fingerprint(video),
                       cree_le=now_iso(), wasf_version=__version__)
     project.seconde_lecture = second_label
     project.preparation = {"etat": "en_cours", "commencee_le": now_iso()}
@@ -442,6 +465,9 @@ class RenderOptions:
     sans_validation_realisateur: bool = False
     sortie: Path | None = None
     couper_silences: bool = False
+    # Engine « humain »: what the team declares about its recordings (tts.declared_source).
+    source_voix: str | None = None   # humaine | synthese | inconnue
+    voix_de: str | None = None       # who lent their voice, or which tool made it
 
 
 def readiness_problems(project: Project, opts: RenderOptions) -> list[str]:
@@ -475,6 +501,23 @@ REFUSALS["hors_film"] = {"titre": "un passage tombe après la fin du film",
                          "conseil": "vérifiez que la vidéo est bien celle de la préparation"}
 REFUSALS["coupee"] = {**REFUSALS["hors_film"], "titre": "la fin du film couperait une voix"}
 FILM_LENGTH_TOLERANCE = 0.5   # seconds between the video's length now and at preparation
+
+
+def _film_check(project: Project, video: Path) -> dict:
+    """Is the video the same file as at preparation? Compared by fingerprint, since a new edit
+    of the same length passes the length check. A warning, not a refusal: a re-encoded copy of
+    the same edit (lighter, other format) changes the fingerprint too, and is fine."""
+    now = media.fingerprint(video)
+    if not project.empreinte_film:
+        return {"identique": None, "empreinte_preparation": None, "empreinte_export": now,
+                "remarque": "projet préparé sans empreinte du film : seule la durée a été "
+                            "comparée"}
+    same = now == project.empreinte_film
+    return {"identique": same, "empreinte_preparation": project.empreinte_film,
+            "empreinte_export": now,
+            "remarque": ("même fichier qu'à la préparation" if same else
+                         "le fichier a changé depuis la préparation, à durée égale : autre "
+                         "montage ou simple réencodage, à vérifier avant de diffuser")}
 
 
 def _refusal_parts(problems: list[dict], key: str, **values) -> list[str]:
@@ -571,6 +614,13 @@ def _record_voices(project: Project, placed: list[dict], texts: dict[str, str],
 def render(project_path: Path, opts: RenderOptions,
            log: Callable[[str], None] = print) -> dict[str, Path]:
     media.require_ffmpeg()
+    if (opts.source_voix or opts.voix_de) and opts.moteur != "humain":
+        raise RenderError("--source-voix et --voix-de décrivent des enregistrements fournis par "
+                          "l'équipe : ils ne servent qu'avec --voix-moteur humain. Avec une voix "
+                          "de synthèse, Wasf sait déjà laquelle et la nomme lui-même.")
+    if opts.voix_de and not opts.source_voix:
+        raise RenderError("--voix-de demande aussi --source-voix (humaine, synthese ou "
+                          "inconnue) : dites d'abord ce que sont ces enregistrements.")
     project_path = Path(project_path).resolve()
     project = load_project(project_path)
     base = project_path.parent
@@ -606,6 +656,12 @@ def render(project_path: Path, opts: RenderOptions,
               if s.statut != "ignore" and s.texte.strip() and (opts.brouillon or s.statut == "valide")]
     if not chosen:
         raise RenderError("Aucun passage à vocaliser.")
+    film_check = _film_check(project, video)
+    if film_check["identique"] is False:
+        log("Attention : le fichier de la vidéo n'est plus le même qu'à la préparation, à durée "
+            "égale. Si le montage a changé, des descriptions peuvent tomber au mauvais endroit : "
+            "vérifiez-les avant de diffuser. (Une copie réencodée du même montage donne aussi ce "
+            "message.)")
     if opts.moteur == "humain":    # every recording is looked at before any work starts
         check_recordings(opts.enregistrements, [s.id for s in chosen],
                          [s.id for s in project.segments],
@@ -660,10 +716,12 @@ def render(project_path: Path, opts: RenderOptions,
     outputs["sous_titres_vtt"] = write_vtt(chosen, out / "audiodescription.vtt", label)
     outputs["sous_titres_srt"] = write_srt(chosen, out / "audiodescription.srt")
     project.energie["export"] = meter.result
-    voice = {**describe_voice(opts.moteur, opts.voix, project.langue),
+    voice = {**describe_voice(opts.moteur, opts.voix, project.langue, opts.source_voix,
+                              opts.voix_de),
              "silences_coupes": opts.couper_silences}
     report = transparency_report(project, mix["passages"], opts.brouillon, voix=voice,
-                                 controles=mix["problemes"] + mix["controles"])
+                                 controles=mix["problemes"] + mix["controles"],
+                                 controle_film=film_check)
     outputs["rapport"] = write_report(report, out / "rapport_transparence.json")
     outputs["credits"] = write_credits(report, out / "credits.txt")
     # The editor may have saved while the film was being made: never write back the copy read
@@ -674,6 +732,10 @@ def render(project_path: Path, opts: RenderOptions,
     _record_voices(fresh, mix["passages"], texts, opts)
     fresh.energie["export"] = meter.result
     entry = {"moteur": opts.moteur, "brouillon": opts.brouillon, "passages": len(chosen)}
+    if opts.moteur == "humain":    # the team's word about its recordings, as said
+        entry["source_voix_declaree"] = opts.source_voix or "non_declaree"
+    if film_check["identique"] is False:
+        entry["film_modifie_depuis_preparation"] = True
     if changed:
         entry["modifie_pendant_export"] = changed
         log("Attention : la piste a été modifiée pendant l'export (" + " ; ".join(changed)

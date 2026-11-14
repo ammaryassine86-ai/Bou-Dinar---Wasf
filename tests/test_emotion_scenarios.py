@@ -122,7 +122,7 @@ SCENES = [
           [reply("Leïla fixe la fenêtre, immobile.", ["Leïla fixe la fenêtre sans bouger"],
                  [{"qui": "Leïla", "emotion": "inquiétude", "indices": [], "certitude": 0.3}],
                  confiance=0.4)],
-          ["IA peu sûre (40 %)"]),
+          ["IA peu sûre (elle se note 0,4 sur 1)"]),
     Scene("8c. Scène ambiguë, deux lectures : le texte ne tranche pas",
           [reply("Leïla fixe Karim, la mâchoire serrée.",
                  ["Leïla fixe Karim", "Sa mâchoire est serrée"],
