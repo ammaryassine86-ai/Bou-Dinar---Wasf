@@ -8,6 +8,10 @@ la piste ; Wasf signale les passages où elle doute ; la réalisation les vérif
 en un clic et approuve la piste. Un·e audiodescripteur·rice peut relire en plus, si la production
 le souhaite.
 
+Une deuxième piste est en préparation : des **sous-titres dynamiques** pour les personnes sourdes et
+malentendantes, qui montreront qui parle, à quel volume et d'où vient le son
+([voir plus bas](#sous-titres-dynamiques-en-préparation)).
+
 > Projet du hackathon **IA Éthique 360** : Junior Entreprise INSAT et Organisation internationale
 > de la Francophonie (OIF), Forum INSAT Entreprise, novembre 2026.
 
@@ -106,6 +110,57 @@ Ce qui distingue Wasf des outils existants :
 - **la transparence** : annonce en tête de film, texte de l'IA conservé à côté du texte final,
   rapport chiffré (dont les passages validés en un clic).
 
+## Sous-titres dynamiques (en préparation)
+
+La deuxième piste de Wasf s'adresse aux personnes sourdes et malentendantes. Elle **n'est pas
+encore dans le code** : ce dépôt produit aujourd'hui l'audiodescription. Les sous-titres montrés
+dans notre vidéo et dans notre présentation sont des maquettes.
+
+Les sous-titres classiques donnent les mots. Ceux de Wasf diront aussi comment ils sont dits, à
+partir de la même lecture du film que l'audiodescription.
+
+| Ce qu'on entend | Ce qui s'affichera |
+| --- | --- |
+| Qui parle, et ce qu'on entend | Le code couleur de la charte française de 2011 : blanc pour la personne qu'on voit parler, jaune pour une voix hors champ, rouge pour un bruit, magenta pour la musique (critère 9, [résumé par Selectra](https://selectra.info/telecom/actualites/marche/sous-titres-tele-couleurs-jaune-rouge-cyan)) |
+| Le volume | Une voix forte en majuscules (`TU L'AS LUE ?`), un murmure en plus petit et entre parenthèses (`(non… pas encore)`), un mot qui traîne étiré (`Nooon !`) |
+| D'où vient le son | Le sous-titre se place sous la personne qui parle, ou du côté d'où vient le bruit dans le mixage |
+| L'arabe et la derja | L'arabe n'a pas de majuscules : le gras et la taille les remplacent |
+
+**On écrit ce qu'on entend, pas ce qu'on suppose.** Wasf n'écrira jamais « (en colère) » ; il
+montrera qu'une voix est forte, parce qu'un volume se mesure. Si l'auteur du film veut préciser
+une émotion, c'est lui qui l'ajoute, comme pour l'audiodescription.
+
+**Lisible d'abord.** Dans une étude présentée à CHI 2023, 16 participants sourds ou malentendants
+ont comparé trois styles expressifs aux sous-titres classiques. Le style qui montrait les émotions
+rendait mieux les émotions et l'insistance, avec une perte modérée de lisibilité. Celui qui ne
+montrait que la prosodie (volume, hauteur, durée) ne faisait pas mieux que les sous-titres
+classiques pour l'insistance ([de Lacerda Pataca et al., 2023](https://doi.org/10.1145/3544548.3581511)).
+Notre piste ressemble à ce second style : raison de plus pour tester avant de promettre. Une
+étude de 2025 a aussi trouvé que les préférences pour la prosodie varient d'une culture à l'autre
+([CuCap, ASSETS 2025](https://www.dgp.toronto.edu/~suhyeon423/publications/cucap/)). Ces études
+montrent enfin que les spectateurs apprécient qu'on leur montre les émotions : dans Wasf, c'est
+l'auteur qui les ajoute, pas l'IA. Nous garderons donc peu d'effets, avec une version classique
+au choix, et ce sont des tests avec des spectateurs tunisiens sourds et malentendants qui diront
+quels effets aident vraiment.
+
+**Le texte de départ** : les sous-titres du film quand ils existent ; sinon, une transcription
+automatique corrigée par la relecture, car la reconnaissance de la derja reste imparfaite.
+
+**Ce qui existe déjà et servira** : la lecture des sous-titres du film (SRT ou WebVTT) et de sa
+bande-son, l'éditeur de relecture, la signature et l'approbation de l'auteur, le rapport de
+transparence.
+
+**Ce qui reste à construire** :
+
+1. mesurer le volume de chaque réplique par rapport à la voix habituelle du personnage ;
+2. trouver de quel côté vient chaque son dans le mixage stéréo ;
+3. repérer les bruits et la musique entre les répliques, que la relecture nomme ou corrige ;
+4. exporter des sous-titres stylés (couleur, taille, position) et une version classique ;
+5. tester les styles avec des personnes sourdes et malentendantes, en Tunisie.
+
+**Une limite assumée** : les personnes sourdes qui signent ont besoin de la langue des signes
+tunisienne. C'est une piste à construire avec les associations.
+
 ## Les données
 
 Wasf **n'entraîne aucun modèle** et n'utilise **aucun film ni aucune audiodescription
@@ -124,6 +179,30 @@ d'autrui**, ni aucun jeu de données collecté sur le web.
   en un clic.
 - **Limite** : nous ne connaissons pas les données d'entraînement des modèles utilisés ; c'est une
   raison de plus pour que la réalisation garde la main sur ce qui est publié.
+
+**Tableau des données**
+
+| Donnée | Source | Licence | Consentement | Date de collecte |
+| --- | --- | --- | --- | --- |
+| Le film à décrire et ses sous-titres | La production, qui détient les droits | Celle du film : Wasf n'en tire aucun droit et n'entraîne rien dessus | Accord du producteur obligatoire : sans lui, `wasf preparer` refuse le film. Sa référence (courriel, contrat) passe dans le rapport et les crédits | L'historique de `projet.json` date la préparation, l'approbation et chaque export |
+| Les images envoyées au modèle | Extraites du film : quatre images réduites par pause | Celle du film | Couvertes par l'accord du producteur. Avec Ollama, elles ne quittent pas l'ordinateur | À la préparation (historique de `projet.json`) |
+| Le fichier d'intention | La réalisation | Celle du film | Écrit par la réalisation elle-même | À la préparation (historique de `projet.json`) |
+| Les exemples de style | L'équipe, ou un·e audiodescripteur·rice | Celle de leur auteur·rice | Accord écrit de l'auteur·rice | Date de l'accord écrit |
+| Les voix enregistrées (moteur « humain ») | Les personnes qui prêtent leur voix | Accord d'utilisation écrit | Accord de chaque personne enregistrée | Date de l'enregistrement |
+| Les voix de synthèse | Azure, espeak-ng, ou une voix Piper choisie par l'utilisateur | Conditions de Microsoft ; GPL v3 pour espeak-ng ; licence propre à chaque voix Piper | Sans objet | Sans objet |
+| Les listes de mots en arabe et en derja (`wasf/emotions.py`) | Écrites par l'équipe | MIT, comme le code | Sans objet | Novembre 2026 |
+| Le clip de démonstration (`wasf demo`) | Fabriqué par FFmpeg sur l'ordinateur | MIT | Sans objet : personne n'est filmé | À chaque lancement |
+| Les modèles d'IA (Gemini, Claude, GPT, modèles d'Ollama) | Leurs fournisseurs | Conditions de chaque fournisseur | Wasf ne les entraîne pas ; leurs données d'entraînement nous sont inconnues | Inconnue |
+| Les voix de notre vidéo de présentation | Des membres de l'équipe | Accord des membres | Chacun a enregistré sa propre voix | Novembre 2026 |
+| Les chiffres et témoignages de ce README | Sources publiées, liées dans le texte | Courtes citations, avec leur source | Témoignages déjà rendus publics par leurs auteurs ou par la presse | Consultés en novembre 2026 ; date de publication donnée avec chaque source |
+
+**Le refus des ayants droit.** Wasf ne s'appuie pas sur l'exception de fouille de textes et de
+données (directive (UE) 2019/790, art. 4) : il ne fouille pas le web, n'entraîne aucun modèle, et
+ne traite un film qu'avec l'accord de son producteur. Sans cet accord, Wasf refuse le film. Pour
+les modèles généralistes mis sur le marché européen, c'est à leurs fournisseurs d'avoir une
+politique de droit d'auteur et de publier un résumé de leurs données d'entraînement (AI Act,
+art. 53). Avec un fournisseur en ligne, lisez aussi l'avertissement sur les offres gratuites
+dans [Choisir le modèle d'IA](#choisir-le-modèle-dia).
 
 ## Démarrage rapide (sans clé d'API)
 
@@ -414,7 +493,7 @@ Règles appliquées par le code :
 | --- | --- | --- |
 | **Les créateurs** | La réalisation fixe l'intention, choisit si l'IA peut nommer une émotion, vérifie les passages signalés, signe et approuve la piste | `intent.py`, `editor/app.py`, `pipeline.readiness_problems` |
 | **Les droits** | Refus de traiter un film sans accord du producteur ; crédits : ce que l'IA a écrit, qui a validé | `intent.check_rights`, `export.write_credits` |
-| **Les données** | Le film n'entraîne aucun modèle ; aucun film ni aucune audiodescription d'autrui ; option 100 % locale (Ollama) ; seules des images réduites sont envoyées | `providers.py`, `media.extract_frame` |
+| **Les données** | Le film n'entraîne aucun modèle ; aucun film ni aucune audiodescription d'autrui ; option 100 % locale (Ollama) ; seules des images réduites sont envoyées ; sans l'accord du producteur, le film est refusé ([tableau des données](#les-données)) | `providers.py`, `media.extract_frame`, `intent.check_rights` |
 | **Cultures et langues** | Derja telle qu'on la parle, arabe et français ; lexique et noms des personnages fournis par la réalisation | `prompts.py`, `intent.py` |
 | **La transparence** | Annonce parlée et carton en tête de film, mention dans le WebVTT ; elle nomme les signataires réels et annonce une simulation comme telle. Rapport : part du texte modifiée par un humain, passages validés en un clic après un échantillon relu, modèle réellement utilisé, passages qui nomment une émotion, voix utilisée (enregistrements fournis ou voix de synthèse, laquelle) et résultat du contrôle des voix. L'éditeur montre ce que l'IA a vu à part de ce qu'elle suppose | `export.py`, `editor/` |
 | **La planète** | Images de 768 px max (512 px pour celles d'avant la pause), révisions en texte seul, une génération par film, mesure CodeCarbon | `media.py`, `pipeline.py`, `agent.py`, `energy.py` |
@@ -494,6 +573,8 @@ descriptions aident vraiment des spectateurs aveugles et malvoyants :
 
 ## Limites connues
 
+- Les sous-titres dynamiques ne sont pas encore codés : ceux de la vidéo et de la présentation
+  sont des maquettes (voir [Sous-titres dynamiques](#sous-titres-dynamiques-en-préparation)).
 - La simulation `mock` ne voit pas les images : elle sert aux tests et aux démonstrations sans
   clé, et ses exports l'annoncent.
 - La liste « à éviter » reconnaît les variantes d'écriture d'un mot, pas ses synonymes.
@@ -538,6 +619,8 @@ descriptions aident vraiment des spectateurs aveugles et malvoyants :
 
 ## Feuille de route
 
+- Sous-titres dynamiques : les cinq étapes décrites plus haut, puis des tests avec des
+  spectateurs sourds et malentendants
 - Pilote avec IBSAR et le festival HandyFilms
 - Guide de style de l'audiodescription en derja, co-écrit avec des spectateurs aveugles
 - Version web partagée pour les festivals et les sociétés de production
