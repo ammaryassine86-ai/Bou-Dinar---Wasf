@@ -31,12 +31,10 @@ dynamiques passeront par la même relecture, la même signature et le même rapp
 > disent aussi ce qu'on entend, en arabe ou en derja. Cela les exclut d'une partie de leur propre
 > culture. »
 
-**Comment nous avons repéré le problème.** L'équipe n'a pas encore mené ses propres entretiens.
-Le constat repose sur des chiffres publics (INS, OMS), des études sur l'audiodescription en arabe
-publiées de 2020 à 2025, les catalogues des plateformes, et des témoignages publiés par des
-personnes concernées et leurs associations. Chaque source est liée ci-dessous. Des entretiens avec
-IBSAR et l'équipe de HandyFilms sont prévus à la phase suivante, pour confirmer ou corriger ce
-constat.
+**Comment nous avons repéré le problème.** Le constat repose sur des chiffres publics (INS, OMS),
+des études sur l'audiodescription en arabe publiées de 2020 à 2025, les catalogues des
+plateformes, et des témoignages publiés par des personnes concernées et leurs associations. Chaque
+source est liée ci-dessous.
 
 **Ce que disent les chiffres et les études**
 
@@ -649,7 +647,7 @@ descriptions aident vraiment des spectateurs aveugles et malvoyants :
 | Yassine (chef d'équipe) | Coordination, IA et développement | Architecture de Wasf, chaîne de traitement et éditeur, tests, dépôt GitHub |
 | Riadh | Données et voix | Textes de description et registre derja, enregistrements des voix, jeux d'essai |
 | Ali | Design, accessibilité et vidéo | Interface de l'éditeur, sous-titres dynamiques (en préparation), vidéo de présentation |
-| Mohamed | Éthique, droit et partenariats | Consentement et droits sur les films, grille éthique 360°, prise de contact avec IBSAR et HandyFilms, modèle économique |
+| Mohamed | Éthique et droit | Consentement et droits sur les films, grille éthique 360°, modèle économique |
 
 Dépôt du projet : [github.com/ammaryassine86-ai/Bou-Dinar---Wasf](https://github.com/ammaryassine86-ai/Bou-Dinar---Wasf)
 
