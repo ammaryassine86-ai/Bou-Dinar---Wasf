@@ -219,6 +219,44 @@ politique de droit d'auteur et de publier un résumé de leurs données d'entra�
 art. 53). Avec un fournisseur en ligne, lisez aussi l'avertissement sur les offres gratuites
 dans [Choisir le modèle d'IA](#choisir-le-modèle-dia).
 
+## Durabilité et énergie
+
+Faire tourner une IA consomme de l'électricité : un peu sur l'ordinateur qui lance Wasf, et
+surtout dans les centres de données du fournisseur quand on choisit un modèle en ligne. Wasf
+mesure ce qu'il peut, dit ce qu'il ne peut pas mesurer, et limite le calcul dès sa conception.
+
+**Ce que Wasf mesure.** À chaque préparation et à chaque export, il note la durée et le temps de
+calcul. Si CodeCarbon est installé (`pip install -e ".[energie]"`), il ajoute une estimation de
+l'énergie consommée par l'ordinateur, en kWh, et des émissions en grammes de CO₂, calculées avec
+le mix électrique tunisien. Ces mesures sont écrites dans `projet.json` et dans
+`rapport_transparence.json` (code : `wasf/energy.py`).
+
+**Ce qu'il ne peut pas mesurer.** La consommation des serveurs d'un fournisseur en ligne (Gemini,
+Claude, GPT) ne lui est pas accessible. Comme ordre de grandeur, Google estime qu'une requête texte
+médiane à Gemini consommait 0,24 Wh en mai 2025, entraînement non compris
+([Google Cloud, août 2025](https://cloud.google.com/blog/products/infrastructure/measuring-the-environmental-impact-of-ai-inference)).
+Les requêtes de Wasf contiennent aussi des images : leur coût réel n'est pas publié. Avec Ollama,
+tout le calcul se fait sur l'ordinateur et CodeCarbon le mesure en entier : ce n'est pas
+forcément plus sobre, mais c'est mesurable.
+
+**Ce que Wasf fait pour consommer moins.**
+
+- Il n'entraîne aucun modèle : l'entraînement coûte beaucoup d'énergie, et Wasf n'en fait pas.
+- Il n'envoie jamais le film entier : quatre images réduites par pause (768 px au plus, 512 px
+  pour celles d'avant la pause).
+- Les révisions se font en texte seul, sans renvoyer les images.
+- Le contexte de l'histoire vient des sous-titres et des descriptions déjà écrites, sans requête
+  de plus (`wasf/story.py`).
+- La simulation `mock` sert aux tests et aux démonstrations : aucun appel à un modèle.
+
+**Ce qui reste à faire.** Mesurer une préparation complète sur un vrai film avec un vrai modèle,
+en ligne et avec Ollama, et publier ici les chiffres obtenus.
+
+**Les textes de référence.** L'annexe XI de l'AI Act demande aux fournisseurs de modèles
+généralistes de documenter l'énergie consommée par leurs modèles, connue ou estimée. La
+Recommandation de l'UNESCO sur l'éthique de l'IA (2021) consacre son domaine 5 à l'environnement
+et aux écosystèmes.
+
 ## Démarrage rapide (sans clé d'API)
 
 Prérequis : **Python 3.10+** et **FFmpeg** ([ffmpeg.org](https://ffmpeg.org/download.html), à ajouter au PATH).
@@ -511,7 +549,7 @@ Règles appliquées par le code :
 | **Les données** | Le film n'entraîne aucun modèle ; aucun film ni aucune audiodescription d'autrui ; option 100 % locale (Ollama) ; seules des images réduites sont envoyées ; sans l'accord du producteur, le film est refusé ([tableau des données](#les-données)) | `providers.py`, `media.extract_frame`, `intent.check_rights` |
 | **Cultures et langues** | Derja telle qu'on la parle, arabe et français ; lexique et noms des personnages fournis par la réalisation | `prompts.py`, `intent.py` |
 | **La transparence** | Annonce parlée et carton en tête de film, mention dans le WebVTT ; elle nomme les signataires réels et annonce une simulation comme telle. Rapport : part du texte modifiée par un humain, passages validés en un clic après un échantillon relu, modèle réellement utilisé, passages qui nomment une émotion, voix utilisée (enregistrements fournis ou voix de synthèse, laquelle) et résultat du contrôle des voix. L'éditeur montre ce que l'IA a vu à part de ce qu'elle suppose | `export.py`, `editor/` |
-| **La planète** | Images de 768 px max (512 px pour celles d'avant la pause), révisions en texte seul, une génération par film, mesure CodeCarbon | `media.py`, `pipeline.py`, `agent.py`, `energy.py` |
+| **La planète** | Images de 768 px max (512 px pour celles d'avant la pause), révisions en texte seul, une génération par film, mesure CodeCarbon ([détails](#durabilité-et-énergie)) | `media.py`, `pipeline.py`, `agent.py`, `energy.py` |
 
 Détails, limites et engagements : [`docs/ETHIQUE_360.md`](docs/ETHIQUE_360.md).
 
@@ -638,6 +676,8 @@ descriptions aident vraiment des spectateurs aveugles et malvoyants :
   spectateurs sourds et malentendants
 - Pilote avec IBSAR et le festival HandyFilms
 - Guide de style de l'audiodescription en derja, co-écrit avec des spectateurs aveugles
+- L'amazigh, avec des locuteurs natifs pour écrire et vérifier les textes, les listes de mots et
+  l'annonce de début de film
 - Version web partagée pour les festivals et les sociétés de production
 
 ## Équipe Bou Dinar
