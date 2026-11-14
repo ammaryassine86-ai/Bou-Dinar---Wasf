@@ -1,16 +1,21 @@
 # Wasf · وصف
 
-**L'audiodescription écrite par l'IA, sous le contrôle de la réalisation.**
+**Une seule lecture du film, deux pistes d'accessibilité : l'audiodescription pour les personnes
+aveugles et malvoyantes, les sous-titres dynamiques pour les personnes sourdes et malentendantes.
+L'IA écrit, la réalisation garde la main.**
 
-Wasf (« description » en arabe) rend les films tunisiens et francophones accessibles aux
-personnes aveugles et malvoyantes, en **arabe**, en **derja** et en **français**. L'IA écrit toute
-la piste ; Wasf signale les passages où elle doute ; la réalisation les vérifie, valide les autres
-en un clic et approuve la piste. Un·e audiodescripteur·rice peut relire en plus, si la production
-le souhaite.
+Wasf (« description » en arabe) rend les films tunisiens et francophones accessibles en
+**arabe**, en **derja** et en **français**, à deux publics :
 
-Une deuxième piste est en préparation : des **sous-titres dynamiques** pour les personnes sourdes et
-malentendantes, qui montreront qui parle, à quel volume et d'où vient le son
-([voir plus bas](#sous-titres-dynamiques-en-préparation)).
+| Piste | Pour qui | Ce qu'elle apporte | Où en est-elle |
+| --- | --- | --- | --- |
+| **Audiodescription** | Personnes aveugles et malvoyantes | Ce qu'on voit, dit à voix haute dans les silences du film | **Fonctionne** : c'est le code de ce dépôt |
+| **Sous-titres dynamiques** | Personnes sourdes et malentendantes | Ce qu'on entend, et comment c'est dit : qui parle, à quel volume, d'où vient le son | **En préparation** : la conception est [décrite plus bas](#sous-titres-dynamiques-en-préparation), le code reste à écrire |
+
+Pour l'audiodescription, l'IA écrit toute la piste ; Wasf signale les passages où elle doute ; la
+réalisation les vérifie, valide les autres en un clic et approuve la piste. Un·e
+audiodescripteur·rice peut relire en plus, si la production le souhaite. Les sous-titres
+dynamiques passeront par la même relecture, la même signature et le même rapport de transparence.
 
 > Projet du hackathon **IA Éthique 360** : Junior Entreprise INSAT et Organisation internationale
 > de la Francophonie (OIF), Forum INSAT Entreprise, novembre 2026.
@@ -21,9 +26,10 @@ malentendantes, qui montreront qui parle, à quel volume et d'où vient le son
 
 ## Le problème
 
-> « Les personnes aveugles et malvoyantes en Tunisie ne peuvent pas suivre pleinement les films
-> tunisiens, quand ils n'ont pas d'audiodescription en arabe ou en derja, ce qui les exclut d'une
-> partie de leur propre culture. »
+> « Les personnes aveugles, malvoyantes, sourdes et malentendantes en Tunisie ne peuvent pas suivre
+> pleinement les films tunisiens : il leur manque une audiodescription, ou des sous-titres qui
+> disent aussi ce qu'on entend, en arabe ou en derja. Cela les exclut d'une partie de leur propre
+> culture. »
 
 **Comment nous avons repéré le problème.** L'équipe n'a pas encore mené ses propres entretiens.
 Le constat repose sur des chiffres publics (INS, OMS), des études sur l'audiodescription en arabe
@@ -36,8 +42,15 @@ constat.
 
 - **Combien de personnes** : au recensement 2024, 1,0 % des 11,27 millions de personnes de
   5 ans et plus ont beaucoup de difficultés à voir ou ne voient pas, soit environ 113 000
-  personnes ; 7,1 % ont au moins quelques difficultés
+  personnes ; 7,1 % ont au moins quelques difficultés. Pour l'audition, 0,7 % ont beaucoup de
+  difficultés à entendre ou n'entendent pas, soit environ 79 000 personnes ; 3,7 % ont au moins
+  quelques difficultés
   ([INS, bulletin de septembre 2025](https://www.ins.tn/sites/default/files-ftp3/files/2025-09/PROD-Handicap-BULLETIN-FR.pdf)).
+- **Le vieillissement** : 16,9 % des Tunisiens ont 60 ans ou plus
+  ([INS, recensement 2024, repris par Idaraty](https://www.idaraty.tn/public/fr/rapports/ins-recensement-2024)),
+  et dans le monde, plus de 25 % des plus de 60 ans ont une perte auditive incapacitante
+  ([OMS, février 2024](https://www.who.int/entity/mediacentre/factsheets/fs300/fr/index.html)) :
+  un public qui grandit avec l'âge de la population.
 - **Ce qui existe en arabe** : selon une étude de 2025, Netflix est la seule plateforme qui
   propose de l'audiodescription pour des contenus arabes, et sur quelques titres ; faute de loi,
   la télévision et le cinéma n'en proposent pas régulièrement
@@ -80,6 +93,8 @@ constat.
 
 ## Ce que fait Wasf
 
+La piste d'audiodescription, déjà codée, suit ces étapes :
+
 ```
 film + sous-titres + intention de la réalisation
         │
@@ -100,6 +115,8 @@ film + sous-titres + intention de la réalisation
 
 Ce qui distingue Wasf des outils existants :
 
+- **deux publics servis par une seule lecture du film** : l'audiodescription aujourd'hui, les
+  sous-titres dynamiques ensuite, avec les mêmes garde-fous ;
 - **la derja et l'arabe** pour les films tunisiens, pas seulement les grandes langues des plateformes ;
 - **l'intention de la réalisation** guide chaque description (ce qu'il faut faire remarquer, ce qu'il ne faut jamais révéler) ;
 - **ce que les personnages expriment sans parler** : visages, gestes, posture et leurs
