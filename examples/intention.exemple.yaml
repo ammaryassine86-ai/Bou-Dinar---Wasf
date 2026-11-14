@@ -1,0 +1,55 @@
+# Intention de la réalisation — à remplir AVANT de lancer « wasf preparer ».
+# Film fictif, pour l'exemple.
+
+film: "Le dernier café de Bab Souika"
+realisateur: "Prénom Nom"
+langue: aeb              # fr = français · ar = arabe standard
+                         # aeb = derja tunisienne telle qu'on la parle (avec les mots français du quotidien)
+                         # sans « langue » : celle des dialogues (un film en français → piste et voix en français)
+descripteur: ""          # facultatif : sans audiodescripteur·rice, la réalisation signe
+emotions: signes         # nuancees (par défaut) : l'IA peut nommer une émotion probable, avec
+                         #   les signes visibles qui l'appuient (« l'air inquiet »)
+                         # signes : aucun mot d'émotion, seulement ce que l'on voit
+                         #   (« elle baisse les yeux »), comme le veut ce film
+
+droits:
+  accord_producteur: true                     # obligatoire : sans accord, Wasf refuse le film
+  reference: "Accord écrit du producteur, courriel du 13/11/2026"
+
+personnages:             # l'agent nomme les personnages au lieu de dire « une femme »
+  - nom: Amel
+    description: "femme d'une trentaine d'années, foulard rouge"
+  - nom: Slah
+    description: "homme âgé, moustache blanche, chéchia rouge"
+
+intention_globale: >
+  Le film parle de la solitude dans la médina. Privilégier les regards, les mains et la
+  lumière ; ne jamais commenter les émotions.
+
+style: "Phrases courtes. Nommer les lieux de la médina quand ils sont visibles."
+
+lexique:                 # les mots du film pour ce qui revient souvent : l'agent les reprend tels quels
+  téléphone portable: البورتابل
+  chéchia: الشاشية
+  café (le lieu): القهوة
+  # lettre: …            # un mot « à éviter » présent ici est évité dans les deux langues
+
+exemples:                # 5 à 10 lignes (12 au plus), écrites par l'équipe ou par un·e
+                         # audiodescripteur·rice avec son accord écrit, de préférence sur un
+                         # clip tourné par l'équipe
+  - "أمل تحط البورتابل على الطاولة وتغزر للباب."
+
+# mots_par_seconde: 2.2  # débit de lecture ; par défaut fr 2,5 · ar 2,0 · aeb 2,2
+
+scenes:                  # mettez les timecodes entre guillemets
+  - debut: "00:00:00"
+    fin: "00:00:40"
+    a_remarquer: "Amel regarde la porte du café, sa tasse à la main."
+    a_eviter: ["le visiteur", "lettre"]   # reconnus au pluriel, au féminin, sans accent ;
+                                          # listez les synonymes (« la missive »)
+    contexte: "Ouverture : on ne doit pas savoir qui va entrer."
+
+  - debut: "00:00:40"
+    fin: "00:01:30"
+    a_remarquer: "Slah range les chaises une à une, lentement."
+    a_eviter: []

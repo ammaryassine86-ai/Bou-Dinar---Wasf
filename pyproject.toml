@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wasf"
+version = "0.1.0"
+description = "Wasf — audiodescription écrite par l'IA, sous le contrôle de la réalisation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "numpy>=1.24",
+  "flask>=3.0",
+  "pyyaml>=6.0",
+  "requests>=2.31",
+  "pillow>=10.1",
+]
+
+[project.optional-dependencies]
+gemini = ["google-genai>=1.0"]
+anthropic = ["anthropic>=0.40"]
+openai = ["openai>=1.40"]
+azure = ["azure-cognitiveservices-speech>=1.38"]
+energie = ["codecarbon>=2.5"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+wasf = "wasf.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["wasf*"]
+
+[tool.setuptools.package-data]
+wasf = ["editor/templates/*.html", "editor/static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

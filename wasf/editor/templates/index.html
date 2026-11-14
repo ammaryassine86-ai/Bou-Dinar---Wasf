@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="wasf-jeton" content="{{ jeton }}">
+  <title>Wasf · Relecture de l'audiodescription</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='editor.css') }}">
+</head>
+<body>
+  <a class="skip" href="#passages">Aller aux passages</a>
+
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">وصف</span>
+      <div>
+        <h1 id="film">Wasf</h1>
+        <p class="meta" id="meta">Chargement du projet…</p>
+      </div>
+    </div>
+    <p class="ai-note" role="note">
+      Les textes ci-dessous sont <strong>écrits par une IA</strong>.
+      Rien n'est publié sans la validation et l'approbation de la réalisation.
+    </p>
+  </header>
+  <p class="simulation" id="simulation" role="alert" hidden>
+    <strong>Simulation.</strong> Le fournisseur « mock » n'analyse aucune image : ces textes ne
+    décrivent pas le film. Les exports l'annonceront comme une simulation. Pour un vrai film,
+    relancez <code>wasf preparer</code> avec un vrai modèle.
+  </p>
+
+  <p class="simulation" id="preparation" role="alert" hidden>
+    <strong>Préparation inachevée.</strong> L'IA n'a pas fini d'écrire cette piste (préparation en
+    cours ou interrompue) : la relecture est en lecture seule jusqu'à la fin. Pour continuer sans
+    repayer ce qui est fait : <code>wasf preparer … --reprendre</code>.
+  </p>
+
+  <main>
+    <section class="panel" aria-labelledby="team-title">
+      <h2 id="team-title">Équipe et validation</h2>
+      <div class="fields">
+        <label>Réalisation (signe et approuve)
+          <input id="realisateur" type="text" autocomplete="name" placeholder="Prénom Nom">
+        </label>
+        <label>Audiodescripteur·rice (facultatif)
+          <input id="descripteur" type="text" placeholder="Prénom Nom">
+        </label>
+      </div>
+      <p class="hint">Sans audiodescripteur·rice, c'est la réalisation qui signe les passages.</p>
+      <div class="progress-row">
+        <div class="progress" id="progress" role="progressbar" aria-labelledby="progress-label"
+             aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><span id="progress-fill"></span></div>
+        <p id="progress-label">—</p>
+      </div>
+      <div class="bulk">
+        <button type="button" id="valider-lot" class="primary">Valider les passages sans alerte</button>
+        <p class="hint" id="lot-info">—</p>
+      </div>
+      <label class="check">
+        <input id="validation_realisateur" type="checkbox">
+        La réalisation a relu ou écouté la piste et l'approuve
+      </label>
+      <p class="hint">Quand tout est validé : <code id="export-cmd">wasf exporter projet.json</code></p>
+    </section>
+
+    <div class="filters" role="group" aria-label="Filtrer les passages">
+      <button type="button" data-filtre="tous" aria-pressed="true">Tous</button>
+      <button type="button" data-filtre="echantillon" aria-pressed="false">Échantillon</button>
+      <button type="button" data-filtre="signales" aria-pressed="false">Signalés</button>
+      <button type="button" data-filtre="a_faire" aria-pressed="false">À relire</button>
+      <button type="button" data-filtre="valide" aria-pressed="false">Validés</button>
+    </div>
+
+    <section id="passages" aria-label="Passages à relire"></section>
+  </main>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="{{ url_for('static', filename='editor.js') }}"></script>
+</body>
+</html>
