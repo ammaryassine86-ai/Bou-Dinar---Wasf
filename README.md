@@ -257,6 +257,106 @@ généralistes de documenter l'énergie consommée par leurs modèles, connue ou
 Recommandation de l'UNESCO sur l'éthique de l'IA (2021) consacre son domaine 5 à l'environnement
 et aux écosystèmes.
 
+## Marché et modèle économique
+
+Wasf peut-il devenir viable ? À qui s'adresse-t-il, et comment le faire vivre ? Voici nos
+réponses, avec ce que nous savons déjà et ce qu'il reste à vérifier.
+
+### Une offre qui n'existe pas encore en Tunisie
+
+Nous n'avons trouvé aucun outil tunisien qui écrive, avec l'IA, l'audiodescription ou des
+sous-titres adaptés pour les films. Les jeunes entreprises tunisiennes de l'accessibilité que nous
+avons trouvées répondent à d'autres besoins : l'emploi des personnes sourdes et l'apprentissage
+de la langue des signes
+([Deaf Square](https://www.wearetech.africa/fr/fils/tech-stars/sonia-kherigi-nasfi-offre-des-services-demploi-et-de-formation-aux-malentendants)),
+l'école en langue des signes
+([SD Academy](https://www.webmanagercenter.com/2025/08/08/549930/la-tunisie-qui-gagnedou-est-nee-lidee-de-sd-academy-y-a-t-il-une-histoire-personnelle-derriere-ce-projet-engage/)),
+ou un appareil qui traduit la langue des signes
+([Manu](https://managers.tn/2019/10/18/manu-la-voix-des-personnes-sourdes-et-muettes-remporte-le-prix-orange-summer-challenge/)).
+
+Les versions accessibles de films se font aujourd'hui à la main, au cas par cas : une section de
+films audiodécrits au festival HandyFilms, ou des séances pour malentendants et malvoyants dans
+le bus-cinéma Cinématdour, qui a donné 528 séances en un an
+([AllAfrica, janvier 2025](https://fr.allafrica.com/stories/202501210175.html)). La demande
+existe ; l'outil pour y répondre à grande échelle, en derja et en arabe, manque. Notre recherche
+a été faite en ligne en novembre 2026 : si un outil nous a échappé, nous l'ajouterons ici.
+
+### À qui s'adresse Wasf
+
+Les **utilisateurs** sont les spectateurs : en Tunisie, environ 113 000 personnes voient très mal
+ou pas du tout, et environ 79 000 entendent très mal ou pas du tout (voir
+[Le problème](#le-problème)). Les **clients**, ceux qui paient, sont ceux qui fabriquent et
+diffusent les films :
+
+| Client | Pourquoi il paierait | Ce qu'il achète |
+| --- | --- | --- |
+| Producteurs et distributeurs | Ils détiennent les droits et livrent les versions du film. Une version accessible ouvre des séances, des chaînes et des plateformes. En France, depuis 2020, un film doit avoir une audiodescription et des sous-titres SME pour obtenir l'agrément du CNC ([CNC, février 2020](https://www.cnc.fr/professionnels/communiques-de-presse/le-cnc-sengage-pour-le-soustitrage-et-laudiodescription-des-films-francais-a-destination-des-personnes-en-situation-de-handicap_1130744)) : une coproduction franco-tunisienne qui demande cet agrément doit les fournir | La version accessible de chaque film, en derja, en arabe et en français |
+| Festivals et cinémas itinérants | Programmer des séances accessibles, comme HandyFilms ou Cinématdour | Les versions accessibles des films programmés |
+| Salles de cinéma | Accueillir de nouveaux spectateurs avec des séances régulières. Le parc est petit, 41 salles en 2022 ([Tunisie Numérique](https://www.tunisienumerique.com/infrastructures-cinematographiques-15-gouvernorats-ne-disposent-daucune-salle-de-cinema/)) : les salles comptent comme lieux de diffusion plus que comme premiers acheteurs | Des séances accessibles : la version du film et un moyen de la diffuser (casques, application) |
+| Chaînes de télévision et plateformes | Rendre leur catalogue accessible ; en arabe, l'audiodescription reste rare sur les plateformes (voir [Le problème](#le-problème)) | Des versions accessibles pour tout un catalogue |
+| Institutions culturelles | Financer l'accessibilité, notamment celle des films du patrimoine | Des projets de mise en accessibilité |
+
+Wasf travaille aussi en arabe standard et en français : le même outil peut servir au Maghreb, au
+Moyen-Orient et dans les pays francophones. Les films tunisiens circulent déjà : le bilan 2025 de
+l'OIF compte un record de 24 sélections dans de grands festivals internationaux, et les films
+tunisiens y figurent parmi les plus remarqués
+([Webmanagercenter, janvier 2026](https://www.webmanagercenter.com/2026/01/06/559239/cinema-tunisien-une-annee-2025-exceptionnelle-dans-le-bilan-de-loif-avec-des-selections-record/)).
+
+### Ce que nous vendons
+
+Le code reste libre (licence MIT) : n'importe qui peut installer Wasf et s'en servir. Ce qui se
+vend, c'est le service autour :
+
+1. **La version hébergée** : préparer, relire et exporter en ligne, sans rien installer, avec un
+   prix par minute de film, ou un abonnement pour les catalogues.
+2. **La version accessible clé en main** : Wasf, puis la relecture par un·e audiodescripteur·rice,
+   l'enregistrement des voix et les fichiers aux formats salle, télévision et plateformes.
+3. **La formation** des équipes de production à la relecture et à la validation.
+
+**Les prix de référence.** En France, une audiodescription faite entièrement à la main coûte de
+4 000 à 7 000 € par film
+([Association Valentin Haüy, sur AlloCiné](https://www.allocine.fr/article/fichearticle_gen_carticle=18675844.html)),
+et une minute de film demande environ une heure de travail
+([Handicap.fr](https://informations.handicap.fr/a-100-classiques-cinema-bientot-en-audiodescription-32583.php)).
+Aux États-Unis, les prix vont de 15 à 75 $ la minute
+([3Play Media](https://www.3playmedia.com/blog/how-much-does-audio-description-cost/)). Wasf vise
+la partie la plus longue, l'écriture du premier jet, et garde l'humain pour la vérification et la
+voix. Nous ne fixerons notre prix qu'après un pilote : il dépend du temps réellement gagné, que
+nous n'avons pas encore mesuré.
+
+**Comment Wasf peut devenir rentable.** Pour nous, un film coûte des requêtes au modèle d'IA, du
+temps de relecture, l'enregistrement des voix et l'hébergement. Le premier jet automatique réduit
+la partie la plus chère, le temps d'écriture ; le reste se vend comme un service. Un catalogue
+rendu accessible crée ensuite des besoins réguliers : nouveaux films, nouvelles langues, nouveaux
+supports.
+
+### Comment le faire connaître et le faire vivre
+
+- **Un pilote visible** : une séance accessible d'un film tunisien, avec HandyFilms, Cinématdour
+  ou les Journées cinématographiques de Carthage, pour montrer le résultat et mesurer le temps
+  gagné.
+- **La mention dans chaque film** : les crédits et les sous-titres exportés portent « Généré avec
+  Wasf ». Chaque film rendu accessible fait connaître l'outil.
+- **Le code ouvert** : le dépôt public donne confiance aux producteurs et attire des
+  contributions, par exemple des universités.
+- **Les réseaux du cinéma** : le CNCI, et l'UPICA, le syndicat créé en 2025 qui réunit producteurs
+  et exploitants de salles
+  ([L'Économiste maghrébin, mai 2025](https://www.leconomistemaghrebin.com/?p=625577)).
+- **La Francophonie et l'export** : les festivals où circulent les films tunisiens, puis les pays
+  arabophones et francophones.
+- **Des chiffres publiés** : temps gagné par film, nombre de films rendus accessibles, avis des
+  spectateurs.
+
+### Les risques, et notre réponse
+
+| Risque | Notre réponse |
+| --- | --- |
+| Peu de salles en Tunisie : 41 en 2022, et 15 gouvernorats sans aucune salle | Vendre d'abord aux producteurs, aux distributeurs et aux plateformes, et viser l'export |
+| Pas d'obligation légale trouvée en Tunisie, contrairement à la France | Mettre en avant le coût plus bas, les nouveaux publics et les coproductions qui doivent fournir ces versions |
+| Qualité pas encore mesurée sur un vrai film | Un pilote avant toute vente, et la relecture humaine obligatoire |
+| Dépendance aux fournisseurs d'IA | Plusieurs fournisseurs au choix, et un mode local avec Ollama |
+| Des technologies pensées sans les personnes concernées : l'association IChara regrette des outils conçus par des entendants qui ne répondent pas aux besoins des sourds ([AllAfrica, juin 2026](https://fr.allafrica.com/stories/202606230353.html)) | Tester chaque piste avec des spectateurs aveugles et sourds avant de la vendre |
+
 ## Démarrage rapide (sans clé d'API)
 
 Prérequis : **Python 3.10+** et **FFmpeg** ([ffmpeg.org](https://ffmpeg.org/download.html), à ajouter au PATH).
