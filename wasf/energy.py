@@ -7,6 +7,20 @@ NOTE = ("Mesure locale uniquement : la consommation des serveurs d'un fournisseu
         "distant n'est pas incluse.")
 
 
+def tracker_options(label: str) -> dict:
+    """CodeCarbon's settings: Tunisia's electricity, quiet, and no output file. CodeCarbon 3 says
+    « no file » with output_methods=[] and warns that save_to_file will be removed, after which
+    passing it would fail and leave only the timing; CodeCarbon 2 knows only save_to_file."""
+    options = {"country_iso_code": "TUN", "log_level": "error",
+               "project_name": f"wasf-{label}"}
+    try:
+        from codecarbon import OutputMethod  # noqa: F401  (CodeCarbon 3 and later)
+        options["output_methods"] = []
+    except ImportError:
+        options["save_to_file"] = False
+    return options
+
+
 class EnergyMeter:
     def __init__(self, label: str):
         self.label = label
@@ -18,9 +32,7 @@ class EnergyMeter:
         self._c0 = time.process_time()
         try:
             from codecarbon import OfflineEmissionsTracker
-            self._tracker = OfflineEmissionsTracker(country_iso_code="TUN", save_to_file=False,
-                                                    log_level="error",
-                                                    project_name=f"wasf-{self.label}")
+            self._tracker = OfflineEmissionsTracker(**tracker_options(self.label))
             self._tracker.start()
         except Exception:  # not installed or unsupported platform: keep the timing only
             self._tracker = None

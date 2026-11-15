@@ -705,7 +705,7 @@ wasf/
 ├── pipeline.py      étapes « préparer » et « exporter »
 ├── demo.py          clip de démonstration sans droits de tiers
 └── cli.py           commandes wasf demo | preparer | relire | exporter
-tests/               292 tests, dont le format exact des requêtes vers chaque fournisseur
+tests/               296 tests, dont le format exact des requêtes vers chaque fournisseur
 examples/            fichier d'intention commenté
 docs/                éthique, protocole de test des émotions, correctifs des lots 1 et 2, état
                      complet des limites (lot 3), captures
@@ -738,8 +738,10 @@ abîmé). Détails et résultats : [`docs/LOT2_CORRECTIFS.md`](docs/LOT2_CORRECT
 
 Ceux du lot 3 aussi : `test_fatal_errors.py` (arrêt sur une erreur qui reviendrait à chaque
 passage), `test_voice_source.py` (origine des voix déclarée), `test_energy_scope.py` (portée de la
-mesure d'énergie, appels au modèle, note de confiance) et `test_film_fingerprint.py` (film
-remplacé, même de même durée). L'état complet des quinze limites, corrigées ou non, et ce qui
+mesure d'énergie, appels au modèle, note de confiance), `test_film_fingerprint.py` (film
+remplacé, même de même durée) et `test_energy_codecarbon.py` (CodeCarbon 2 et 3, sans
+avertissement ni fichier laissé ; le dernier de ces tests ne tourne que là où CodeCarbon est
+installé). L'état complet des quinze limites, corrigées ou non, et ce qui
 demande encore de vrais enregistrements ou des personnes :
 [`docs/COMPREHENSIVE_LIMITATIONS_AND_IMPROVEMENTS.md`](docs/COMPREHENSIVE_LIMITATIONS_AND_IMPROVEMENTS.md).
 

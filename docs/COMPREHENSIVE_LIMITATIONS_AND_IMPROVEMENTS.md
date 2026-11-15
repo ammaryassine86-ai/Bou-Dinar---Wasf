@@ -34,11 +34,11 @@ mesurable), **calibrage** (il faut de vrais enregistrements ou des films annoté
 
 | | Avant le lot 3 | Après le lot 3 |
 | --- | --- | --- |
-| Tests sous Linux | 255 réussis | 292 réussis, en 8 min 31 |
-| Nouveaux tests | | 37, dans 4 fichiers |
+| Tests sous Linux | 255 réussis | 296 réussis avec CodeCarbon 3.3.2 actif, en 8 min 24, sans aucun avertissement de CodeCarbon. Sans CodeCarbon : 292 réussis avant la suite CodeCarbon, puis ses 4 tests à part (3 réussis, 1 ignoré car il demande CodeCarbon) |
+| Nouveaux tests | | 41, dans 5 fichiers |
 | Tests existants modifiés | | 2 assertions de libellé (point G, voir plus bas) |
 | Avertissements du linter (ruff) | 26 | 25, aucun nouveau |
-| Windows | 253 réussis, 2 ignorés (lot 2) | à relancer sur le PC de l'équipe |
+| Windows | 253 réussis, 2 ignorés (lot 2) | 290 réussis, 2 ignorés avant la suite CodeCarbon (129 avertissements, dont 128 de CodeCarbon) ; à relancer après elle |
 
 ## Ce que le lot 3 a changé
 
@@ -121,6 +121,20 @@ mesurable), **calibrage** (il faut de vrais enregistrements ou des films annoté
   empreinte.
 - **Ce qui ne peut pas être garanti** : l'empreinte dit que le fichier a changé, pas ce qui a
   changé. Les projets préparés avant ce lot n'ont que la durée, et le rapport le dit.
+
+### Suite du lot 3 : CodeCarbon 3
+
+- **Constat** : le premier passage des tests sous Windows, avec CodeCarbon 3 installé, a donné
+  129 avertissements. 128 venaient de CodeCarbon : `save_to_file`, que Wasf lui passait, « sera
+  retiré dans une version future ». Le jour où il le sera, le passer ferait échouer la mesure, et
+  Wasf garderait la seule durée sans le dire, alors que CodeCarbon est installé.
+- **Correction** : `energy.tracker_options` demande « aucun fichier » à la façon de chaque
+  version : `output_methods=[]` pour CodeCarbon 3, `save_to_file=False` pour CodeCarbon 2.
+- **Preuve** : avec le vrai CodeCarbon 3.3.2, trois mesures donnaient trois avertissements
+  avant, aucun après, et la mesure se fait dans les deux cas.
+- **Tests** (`test_energy_codecarbon.py`, 4 cas) : les deux versions, l'absence de CodeCarbon, et
+  un test avec le vrai CodeCarbon (aucun avertissement, aucun fichier laissé), qui ne tourne que
+  là où CodeCarbon est installé.
 
 ## Ce qui n'a pas changé, et pourquoi
 
