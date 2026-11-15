@@ -13,8 +13,8 @@ import numpy as np
 from . import __version__, media
 from .agent import DescriberAgent, count_words, draw_sample, refresh_voice_check
 from .energy import EnergyMeter
-from .export import (label_text, make_card, transparency_report, write_credits, write_report,
-                     write_srt, write_vtt)
+from .export import (label_text, make_card, notice_seconds, transparency_report, write_credits,
+                     write_report, write_srt, write_vtt)
 from .gaps import ENCODING_NAMES, load_subtitles, neighbours, plan_windows
 from .intent import LANGUAGES, load_intent
 from .mix import VoiceTimingError, build_mix
@@ -714,7 +714,9 @@ def render(project_path: Path, opts: RenderOptions,
 
     label = label_text(project, opts.brouillon)
     outputs["sous_titres_vtt"] = write_vtt(chosen, out / "audiodescription.vtt", label)
-    outputs["sous_titres_srt"] = write_srt(chosen, out / "audiodescription.srt")
+    outputs["sous_titres_srt"] = write_srt(chosen, out / "audiodescription.srt", label,
+                                           notice_seconds(label, project.langue,
+                                                          project.mots_par_seconde or None))
     project.energie["export"] = meter.result
     voice = {**describe_voice(opts.moteur, opts.voix, project.langue, opts.source_voix,
                               opts.voix_de),

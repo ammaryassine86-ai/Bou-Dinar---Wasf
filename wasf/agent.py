@@ -103,6 +103,15 @@ def has_errors(checks: list[dict]) -> bool:
     return any(c.get("niveau") == "erreur" for c in checks)
 
 
+def confidence_after_rewrite(seen: float | None, rewritten: float | None) -> float | None:
+    """The confidence a passage keeps after a text-only rewrite. The rewrite does not see the
+    images: its mark may lower the one the model gave while looking at them (it had to cut
+    something), never raise it. A mark unknown at the draft stays unknown, so it is flagged."""
+    if seen is None or rewritten is None:
+        return seen
+    return min(seen, rewritten)
+
+
 # Below this, the model itself says it is unsure: a person should look before it goes out.
 LOW_CONFIDENCE = 0.5
 
@@ -337,7 +346,10 @@ class DescriberAgent:
                 trace.append({"etape": "erreur", "message": str(exc)})
                 break
             text = revised["description"]
-            parsed["confiance"] = revised["confiance"]
+            # Written without the images: its own mark never raises the one the draft was given
+            # while looking at them (a passage the model doubted stays flagged).
+            parsed["confiance"] = confidence_after_rewrite(parsed["confiance"],
+                                                           revised["confiance"])
             supports = revised["appuis"]  # the draft's would point at sentences that changed
             trace.append({"etape": f"revision {attempt}", "texte": text,
                           "confiance": revised["confiance"]})

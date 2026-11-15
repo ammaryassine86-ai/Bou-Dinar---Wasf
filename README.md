@@ -705,10 +705,10 @@ wasf/
 ├── pipeline.py      étapes « préparer » et « exporter »
 ├── demo.py          clip de démonstration sans droits de tiers
 └── cli.py           commandes wasf demo | preparer | relire | exporter
-tests/               296 tests, dont le format exact des requêtes vers chaque fournisseur
+tests/               331 tests, dont le format exact des requêtes vers chaque fournisseur
 examples/            fichier d'intention commenté
 docs/                éthique, protocole de test des émotions, correctifs des lots 1 et 2, état
-                     complet des limites (lot 3), captures
+                     complet des limites (lot 3), audit de l'agent (9 rapports), captures
 ```
 
 ## Tests
@@ -744,6 +744,12 @@ avertissement ni fichier laissé ; le dernier de ces tests ne tourne que là où
 installé). L'état complet des quinze limites, corrigées ou non, et ce qui
 demande encore de vrais enregistrements ou des personnes :
 [`docs/COMPREHENSIVE_LIMITATIONS_AND_IMPROVEMENTS.md`](docs/COMPREHENSIVE_LIMITATIONS_AND_IMPROVEMENTS.md).
+
+Ceux de l'audit du 15 novembre aussi : `test_consent.py` (seul `true` vaut accord du producteur,
+et sa référence est obligatoire), `test_confidence_rewrite.py` (une réécriture faite sans les
+images ne remonte jamais la note de confiance) et `test_export_mentions.py` (mention de l'IA en
+tête du SRT, crédits qui ne promettent que ce que Wasf tient). L'audit complet, en neuf rapports,
+commence par [`docs/AGENT_ARCHITECTURE_AUDIT.md`](docs/AGENT_ARCHITECTURE_AUDIT.md).
 
 `tests/test_emotion_scenarios.py` rejoue huit scènes, plus un regard évité et une scène à deux
 lectures, (conversation, pleurs, colère, sourire qui
@@ -806,6 +812,8 @@ descriptions aident vraiment des spectateurs aveugles et malvoyants :
 
 ## Feuille de route
 
+- Le nouvel agent, phase par phase, chaque phrase reliée à ses images et chaque phase mesurée
+  avant la suivante : [`docs/WASF_IMPLEMENTATION_SPECIFICATION.md`](docs/WASF_IMPLEMENTATION_SPECIFICATION.md)
 - Sous-titres dynamiques : les cinq étapes décrites plus haut, puis des tests avec des
   spectateurs sourds et malentendants
 - Pilote avec IBSAR et le festival HandyFilms

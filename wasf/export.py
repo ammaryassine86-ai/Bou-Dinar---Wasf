@@ -10,6 +10,7 @@ from .agent import count_words
 from .emotions import named_emotions
 from .project import Project, now_iso
 from .timecode import fmt_tc
+from .tts import estimated_seconds
 
 LABELS = {
     "fr": {"base": "Audiodescription assistée par intelligence artificielle, écrite et validée par {who}.",
@@ -120,9 +121,24 @@ def write_vtt(segments, path: Path, label: str) -> Path:
     return path
 
 
-def write_srt(segments, path: Path) -> Path:
-    blocks = [f"{i}\n{fmt_tc(seg.parole_debut, ',')} --> {fmt_tc(seg.parole_fin, ',')}\n"
-              f"{_cue_text(seg.texte)}\n" for i, seg in enumerate(segments, 1)]
+NOTICE_MIN_SECONDS = 4.0   # the AI notice opens the SRT for at least this long
+
+
+def notice_seconds(label: str, langue: str, rate: float | None = None) -> float:
+    """How long the AI notice stays on screen as the SRT's first subtitle: the time it takes to
+    say it at the track's speaking rate, and 4 s at least."""
+    return max(NOTICE_MIN_SECONDS, round(estimated_seconds(label, langue, rate), 1))
+
+
+def write_srt(segments, path: Path, label: str | None = None,
+              label_seconds: float = NOTICE_MIN_SECONDS) -> Path:
+    """The descriptions as SRT subtitles. SRT has no comments, so the AI notice, the sentence
+    spoken before the film, is its first subtitle, from the start of the film. A description that
+    starts within those seconds is shown with it."""
+    cues = [(0.0, label_seconds, label)] if label else []
+    cues += [(seg.parole_debut, seg.parole_fin, seg.texte) for seg in segments]
+    blocks = [f"{i}\n{fmt_tc(start, ',')} --> {fmt_tc(end, ',')}\n{_cue_text(text)}\n"
+              for i, (start, end, text) in enumerate(cues, 1)]
     path.write_text("\n".join(blocks), encoding="utf-8")
     return path
 
@@ -235,11 +251,32 @@ def write_report(report: dict, path: Path) -> Path:
 
 
 def _emotions_line(emotions: dict) -> str:
-    if emotions.get("mode") == "signes":
-        return "Émotions : seulement leurs signes visibles, à la demande de la réalisation"
+    """What the AI was told about emotions and what the rules check, never more: a sign-less
+    emotion is only flagged, and so is certainty in a person's edit (audit of 15/11/2026)."""
     count = emotions.get("passages_nommant_une_emotion")
-    return ("Émotions : nommées seulement avec leurs signes visibles, jamais avec certitude"
-            + (f" ({count} passage(s))" if count else ""))
+    if emotions.get("mode") == "signes":
+        return ("Émotions : à la demande de la réalisation, l'IA avait pour consigne de décrire "
+                "seulement leurs signes visibles, sans mot d'émotion ; un mot d'émotion est "
+                "signalé à la relecture"
+                + (f" ({count} passage(s) en nomment une quand même)" if count else ""))
+    return ("Émotions : l'IA avait pour consigne de les nommer seulement avec leurs signes "
+            "visibles, sans certitude ; un mot de certitude bloque son texte, une émotion sans "
+            "signe visible est signalée à la relecture"
+            + (f" ({count} passage(s) nomment une émotion)" if count else ""))
+
+
+# Providers whose servers receive the frames and the text: what they do with them is theirs.
+ONLINE_PROVIDERS = ("gemini", "anthropic", "openai")
+
+
+def _training_lines(provider: str) -> list[str]:
+    """What Wasf can promise about training, and no more: it never trains a model, but what an
+    online provider does with what it receives depends on its terms, which Wasf cannot check."""
+    lines = ["Wasf n'entraîne aucun modèle d'IA sur ce film."]
+    if provider in ONLINE_PROVIDERS:
+        lines.append(f"Les images et les textes envoyés à « {provider} » relèvent de ses "
+                     "conditions d'utilisation, que Wasf ne peut pas vérifier.")
+    return lines
 
 
 def _declaration_text(declaration: dict | None) -> str:
@@ -316,7 +353,7 @@ def write_credits(report: dict, path: Path) -> Path:
         f"Part moyenne du texte modifiée : {round(share * 100)} %" if share is not None else "",
         _emotions_line(report.get("emotions") or {}),
         "",
-        "Le film n'est jamais utilisé pour entraîner un modèle d'IA.",
+        *_training_lines(report["ia"]["fournisseur"]),
         f"Généré avec Wasf {report['wasf_version']} le {report['genere_le']}.",
     ]
     path.write_text("\n".join(line for line in lines if line is not None) + "\n", encoding="utf-8")

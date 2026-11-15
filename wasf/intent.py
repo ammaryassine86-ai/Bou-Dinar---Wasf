@@ -76,11 +76,18 @@ class Intent:
         }
 
     def check_rights(self) -> None:
+        """The producer's permission, and where to find it: both are required."""
         if not self.accord_producteur:
             raise RightsError(
                 "Wasf ne traite un film qu'avec l'accord du producteur. Dans le fichier "
                 "d'intention, renseignez « droits: accord_producteur: true » et la "
                 "« reference » de l'accord (courriel, contrat…)."
+            )
+        if not self.reference_accord.strip():
+            raise RightsError(
+                "L'accord du producteur n'a pas de référence. Sous « droits », renseignez "
+                "« reference » : le courriel ou le contrat qui le prouve. Elle est reprise dans le "
+                "rapport et les crédits, pour que l'accord puisse être retrouvé."
             )
 
 
@@ -103,6 +110,26 @@ def _as_lexicon(value) -> dict[str, str]:
                           "par exemple « chéchia: الشاشية ».")
     return {str(thing).strip(): str(word).strip() for thing, word in value.items()
             if str(thing).strip() and word is not None and str(word).strip()}
+
+
+def _as_consent(droits) -> tuple[bool, str]:
+    """(permission given, its reference) from the « droits » section. Only YAML's true counts as
+    a yes: any other word, even « oui », is refused, so that « non » or a typo never passes for
+    the producer's permission (in Python, every non-empty text counts as true)."""
+    if droits is None:
+        return False, ""
+    if not isinstance(droits, dict):
+        raise IntentError("« droits » doit contenir deux lignes : « accord_producteur: true » et "
+                          "« reference: » suivie du courriel ou du contrat qui prouve l'accord.")
+    given = droits.get("accord_producteur")
+    if given is None:
+        given = False
+    if not isinstance(given, bool):
+        raise IntentError(f"« accord_producteur » vaut « {given} » : écrivez true si le "
+                          "producteur a donné son accord, false sinon, sans guillemets. Aucun "
+                          "autre mot n'est accepté, même « oui » ou « non », pour qu'une faute "
+                          "de frappe ne passe jamais pour un accord.")
+    return given, str(droits.get("reference") or "").strip()
 
 
 def _as_emotion_mode(value) -> str:
@@ -147,15 +174,15 @@ def load_intent(path: Path) -> Intent:
         {"nom": str(p["nom"]).strip(), "description": str(p.get("description") or "").strip()}
         for p in data.get("personnages") or [] if isinstance(p, dict) and p.get("nom")
     ]
-    droits = data.get("droits") or {}
+    accord, reference = _as_consent(data.get("droits"))
     mps = data.get("mots_par_seconde")
     return Intent(
         film=film,
         realisateur=str(data.get("realisateur") or "").strip(),
         langue=langue,
         descripteur=str(data.get("descripteur") or "").strip(),
-        accord_producteur=bool(droits.get("accord_producteur", False)),
-        reference_accord=str(droits.get("reference") or "").strip(),
+        accord_producteur=accord,
+        reference_accord=reference,
         personnages=personnages,
         intention_globale=str(data.get("intention_globale") or "").strip(),
         style=str(data.get("style") or "").strip(),
