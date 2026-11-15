@@ -178,8 +178,14 @@ tunisienne. C'est une piste à construire avec les associations.
 
 ## Les données
 
-Wasf **n'entraîne aucun modèle** et n'utilise **aucun film ni aucune audiodescription
-d'autrui**, ni aucun jeu de données collecté sur le web.
+Wasf s'appuie sur des modèles d'IA déjà entraînés et les guide, film par film, avec les images,
+les sous-titres et les notes de la réalisation. Aujourd'hui, Wasf **n'entraîne aucun modèle**, et
+il n'en entraînera **jamais sur le film d'un client**. Il n'utilise ni film ni audiodescription
+d'autrui sans accord, ni données collectées sur le web.
+
+Les sous-titres dynamiques pourront demander d'ajuster un modèle, par exemple pour mieux
+reconnaître la derja ou les bruits d'un film. Ce sera seulement avec des données dont les auteurs
+ont donné leur accord écrit, ajoutées au tableau ci-dessous avant tout entraînement.
 
 - **Pendant l'usage** : pour un film dont le producteur a donné son accord, Wasf envoie à un
   modèle déjà entraîné quatre images réduites par pause (deux pendant, deux juste avant), les
@@ -210,12 +216,13 @@ d'autrui**, ni aucun jeu de données collecté sur le web.
 | Le clip de démonstration (`wasf demo`) | Fabriqué par FFmpeg sur l'ordinateur | MIT | Sans objet : personne n'est filmé | À chaque lancement |
 | Les modèles d'IA (Gemini, Claude, GPT, modèles d'Ollama) | Leurs fournisseurs | Conditions de chaque fournisseur | Wasf ne les entraîne pas ; leurs données d'entraînement nous sont inconnues | Inconnue |
 | Les voix de notre vidéo de présentation | Des membres de l'équipe | Accord des membres | Chacun a enregistré sa propre voix | Novembre 2026 |
+| Les deux extraits d'ouverture de notre vidéo | Vidéos publiées en ligne, en anglais, créditées à l'écran | Celle de leurs auteurs : courts extraits, avec leur source | Sans objet : vidéos déjà rendues publiques par leurs auteurs ; sous-titres français écrits par l'équipe | Novembre 2026 |
 | Les chiffres et témoignages de ce README | Sources publiées, liées dans le texte | Courtes citations, avec leur source | Témoignages déjà rendus publics par leurs auteurs ou par la presse | Consultés en novembre 2026 ; date de publication donnée avec chaque source |
 
 **Le refus des ayants droit.** Wasf ne s'appuie pas sur l'exception de fouille de textes et de
-données (directive (UE) 2019/790, art. 4) : il ne fouille pas le web, n'entraîne aucun modèle, et
-ne traite un film qu'avec l'accord de son producteur. Sans cet accord, Wasf refuse le film. Pour
-les modèles généralistes mis sur le marché européen, c'est à leurs fournisseurs d'avoir une
+données (directive (UE) 2019/790, art. 4) : il ne fouille pas le web, n'entraîne aucun modèle sur
+les films qu'il traite, et ne traite un film qu'avec l'accord de son producteur. Sans cet accord,
+Wasf refuse le film. Pour les modèles généralistes mis sur le marché européen, c'est à leurs fournisseurs d'avoir une
 politique de droit d'auteur et de publier un résumé de leurs données d'entraînement (AI Act,
 art. 53). Avec un fournisseur en ligne, lisez aussi l'avertissement sur les offres gratuites
 dans [Choisir le modèle d'IA](#choisir-le-modèle-dia).
@@ -244,7 +251,8 @@ forcément plus sobre, mais c'est mesurable.
 
 **Ce que Wasf fait pour consommer moins.**
 
-- Il n'entraîne aucun modèle : l'entraînement coûte beaucoup d'énergie, et Wasf n'en fait pas.
+- Il n'entraîne aucun modèle aujourd'hui : l'entraînement coûte beaucoup d'énergie. Si un
+  ajustement devient utile, son coût en énergie sera mesuré et publié ici.
 - Il n'envoie jamais le film entier : quatre images réduites par pause (768 px au plus, 512 px
   pour celles d'avant la pause).
 - Les révisions se font en texte seul, sans renvoyer les images.
@@ -307,14 +315,20 @@ tunisiens y figurent parmi les plus remarqués
 
 ### Ce que nous vendons
 
-Le code reste libre (licence MIT) : n'importe qui peut installer Wasf et s'en servir. Ce qui se
-vend, c'est le service autour :
+Wasf se vend sur abonnement. Le code reste ouvert (licence MIT) pour que chacun puisse vérifier
+ce que fait l'IA ; les clients paient le service qui le fait tourner.
 
-1. **La version hébergée** : préparer, relire et exporter en ligne, sans rien installer, avec un
-   prix par minute de film, ou un abonnement pour les catalogues.
+1. **L'abonnement mensuel** à la version hébergée : préparer, relire et exporter en ligne, sans
+   rien installer ni gérer de clé d'API. Chaque formule comprend un nombre de minutes de film par
+   mois, pour les studios, les chaînes et les plateformes ; un film isolé se paie à la minute.
 2. **La version accessible clé en main** : Wasf, puis la relecture par un·e audiodescripteur·rice,
    l'enregistrement des voix et les fichiers aux formats salle, télévision et plateformes.
 3. **La formation** des équipes de production à la relecture et à la validation.
+
+**Ouvrir le code ne fait pas perdre de clients.** Un producteur n'achète pas un programme et des
+clés d'API : il achète des fichiers prêts à diffuser, vérifiés par un humain. Ceux qui installent
+Wasf eux-mêmes, surtout des étudiants, des chercheurs et des associations, lui donnent confiance
+et le font progresser.
 
 **Les prix de référence.** En France, une audiodescription faite entièrement à la main coûte de
 4 000 à 7 000 € par film
