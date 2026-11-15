@@ -83,6 +83,9 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--modele-seconde-lecture", default=None,
                    help="Modèle de cet autre fournisseur (défaut : son modèle par défaut).")
     p.add_argument("--revisions", type=int, default=2, help="Révisions automatiques maximum.")
+    p.add_argument("--jetons-max", type=int, default=None, metavar="N",
+                   help="Claude : longueur maximale d'une réponse, en jetons (défaut 1024). Le "
+                        "journal appels.jsonl note les réponses coupées.")
     p.add_argument("--pause-min", type=float, default=1.6, help="Pause minimale en secondes.")
     p.add_argument("--passage-max", type=float, default=8.0, help="Durée maximale d'un passage.")
 
@@ -144,7 +147,8 @@ def main(argv: list[str] | None = None) -> int:
                            modele_seconde_lecture=args.modele_seconde_lecture,
                            max_revisions=args.revisions, pause_min=args.pause_min,
                            passage_max=args.passage_max, remplacer=args.remplacer,
-                           reprendre=args.reprendre, refaire_echecs=args.refaire_echecs)
+                           reprendre=args.reprendre, refaire_echecs=args.refaire_echecs,
+                           jetons_max=args.jetons_max)
             print(f"\nProjet créé : {path}\nÉtape suivante : wasf relire {path}")
         elif args.commande in ("relire", "review"):
             from .editor.app import EditorHostError, check_host, create_app, serve

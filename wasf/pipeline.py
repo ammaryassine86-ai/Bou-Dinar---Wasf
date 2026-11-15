@@ -19,6 +19,7 @@ from .gaps import ENCODING_NAMES, load_subtitles, neighbours, plan_windows
 from .intent import LANGUAGES, load_intent
 from .mix import VoiceTimingError, build_mix
 from .project import Project, Segment, load_project, now_iso, save_project
+from .calllog import CALL_LOG, CallLog, describe_totals, summarize
 from .providers import ProviderError, get_provider
 from .continuity import character_memory
 from .story import story_so_far
@@ -35,13 +36,13 @@ CONTEXT_FRAME_WIDTH = 512
 CANDIDATES = 6     # tiny frames scanned per group to find where the image changes
 
 
-def _second_reader(choice, model: str | None, provider):
+def _second_reader(choice, model: str | None, provider, max_tokens: int | None = None):
     """Who takes the second look: nobody, the same model, or another provider's model."""
     if choice in (None, False, "", "non"):
         return None, ""
     if choice is True or choice in ("meme", "même"):
         return provider, "même modèle"
-    checker = get_provider(str(choice), model)        # fail fast if its key is missing
+    checker = get_provider(str(choice), model, max_tokens=max_tokens)  # fail fast: no key
     return checker, f"{checker.name} ({checker.model})"
 
 
@@ -116,6 +117,8 @@ def _protect_existing(out_dir: Path, remplacer: bool, log: Callable[[str], None]
     backup.mkdir(parents=True)
     if (out_dir / "images").exists():
         shutil.move(str(out_dir / "images"), str(backup / "images"))
+    if (out_dir / CALL_LOG).exists():  # the calls belong to the old project
+        shutil.move(str(out_dir / CALL_LOG), str(backup / CALL_LOG))
     if old is None:
         shutil.move(str(project_file), str(backup / "projet.json"))
     else:  # rewrite the video path so the backup still opens in the editor
@@ -309,7 +312,7 @@ def prepare(video: Path, intention: Path, *, sous_titres: Path | None = None,
             max_revisions: int = 2, pause_min: float = 1.6, passage_max: float = 8.0,
             marge: float = 0.3, mots_max: int = 30, remplacer: bool = False,
             reprendre: bool = False, refaire_echecs: bool = False,
-            log: Callable[[str], None] = print) -> Path:
+            jetons_max: int | None = None, log: Callable[[str], None] = print) -> Path:
     """Find the pauses, extract frames, let the agent draft every description.
 
     images_contexte frames come from the secondes_contexte seconds before each pause, so the
@@ -325,7 +328,10 @@ def prepare(video: Path, intention: Path, *, sous_titres: Path | None = None,
     The project is saved as soon as the pauses and their frames are ready, then after every
     passage. reprendre: go on with an interrupted run in the same folder, without asking the AI
     again for the passages already written. refaire_echecs: redo only the passages where the
-    AI failed, unless someone has written them by hand since."""
+    AI failed, unless someone has written them by hand since.
+
+    Every call to a model leaves one line in appels.jsonl, next to projet.json (calllog.py).
+    jetons_max: the longest answer Claude may give (default: providers.CLAUDE_MAX_TOKENS)."""
     media.require_ffmpeg()
     video = Path(video).resolve()
     if not video.exists():
@@ -336,8 +342,9 @@ def prepare(video: Path, intention: Path, *, sous_titres: Path | None = None,
         raise ResumeError("--remplacer repart de zéro, alors que --reprendre et --refaire-echecs "
                           "gardent le projet : choisissez l'un ou l'autre.")
     chosen = langue or intent.langue          # the director's choice: --langue, then the intent
-    provider = get_provider(fournisseur, modele, url)  # fail fast if the key is missing
-    checker, second_label = _second_reader(seconde_lecture, modele_seconde_lecture, provider)
+    provider = get_provider(fournisseur, modele, url, max_tokens=jetons_max)  # fail fast: no key
+    checker, second_label = _second_reader(seconde_lecture, modele_seconde_lecture, provider,
+                                           jetons_max)
     for model in (provider, checker):
         if model is not None:  # « waiting for the rate limit » shows up with the rest of the log
             model.notify = log
@@ -363,10 +370,16 @@ def prepare(video: Path, intention: Path, *, sous_titres: Path | None = None,
         for warning in warnings:
             log(f"Attention : {warning}")
     out_dir = (Path(sortie) if sortie else video.parent / f"{video.stem}_wasf").resolve()
+    calls = CallLog(out_dir / CALL_LOG)       # one line per call to a model, never a key
+    same = checker is provider
+    provider = calls.watch(provider)
+    checker = provider if same else calls.watch(checker)
     if reprendre or refaire_echecs:
-        return _go_on(out_dir, video, provider, checker, second_label, chosen, cues,
+        path = _go_on(out_dir, video, provider, checker, second_label, chosen, cues,
                       reprendre=reprendre, refaire_echecs=refaire_echecs, sous_titres=sous_titres,
                       max_revisions=max_revisions, log=log)
+        log(describe_totals(summarize(out_dir / CALL_LOG)))
+        return path
     # Nobody chose: the track speaks the film's language (a French film gets a French track
     # and a French voice). A choice that differs from the dialogue is kept, with a warning.
     spoken = dialogue_language(" ".join(cue.text for cue in cues))
@@ -450,7 +463,9 @@ def prepare(video: Path, intention: Path, *, sous_titres: Path | None = None,
                 seconde_lecture=second_label,
                 emotions=intent.emotions, echantillon=project.echantillon)
     project.preparation.update(etat="terminee", terminee_le=now_iso())
-    return save_project(project, project_file)
+    path = save_project(project, project_file)
+    log(describe_totals(summarize(out_dir / CALL_LOG)))
+    return path
 
 
 @dataclass

@@ -154,8 +154,13 @@ def save_project(project: Project, path: Path) -> Path:
     The new content goes to a temporary file in the same folder, is forced to disk (fsync),
     then replaces the old file in one step (os.replace); the folder is synced too, so the
     replacement itself survives a power cut. If anything fails, the temporary file is removed
-    and the previous projet.json is untouched."""
+    and the previous projet.json is untouched.
+
+    A project in a newer format than this version of Wasf is never written: the fields this
+    version does not know would be lost (see load_project)."""
     path = Path(path)
+    if isinstance(project.version_schema, int) and project.version_schema > SCHEMA_VERSION:
+        raise _too_new(path, project.version_schema)
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(asdict(project), ensure_ascii=False, indent=2)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".projet-", suffix=".json")
@@ -206,7 +211,17 @@ def _unreadable(path: Path, why: str) -> ProjectFileError:
                             f"la main ou mal copié ; Wasf l'a laissé tel quel. {advice}")
 
 
+def _too_new(path: Path, version) -> ProjectFileError:
+    return ProjectFileError(
+        f"Projet trop récent : {path} est au format {version}, et cette version de Wasf ne "
+        f"connaît que le format {SCHEMA_VERSION}. Mettez Wasf à jour pour l'ouvrir : en "
+        "l'enregistrant, cette version perdrait ce qu'elle ne connaît pas. Wasf l'a laissé tel quel.")
+
+
 def load_project(path: Path) -> Project:
+    """Read projet.json. Fields this version does not know are ignored, so a project written
+    by a newer Wasf (a higher version_schema) is refused instead of being opened and, at the
+    next save, stripped of them."""
     path = Path(path)
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -217,6 +232,11 @@ def load_project(path: Path) -> Project:
             from None
     if not isinstance(data, dict) or not isinstance(data.get("segments", []), list):
         raise _unreadable(path, "ce n'est pas un projet Wasf")
+    version = data.get("version_schema", 1)
+    if not isinstance(version, int) or isinstance(version, bool) or version < 1:
+        raise _unreadable(path, f"« version_schema » vaut « {version} »")
+    if version > SCHEMA_VERSION:
+        raise _too_new(path, version)
     try:
         segments = [Segment(**_known(Segment, s)) for s in data.get("segments", [])]
         project = Project(**_known(Project, {**data, "segments": []}))

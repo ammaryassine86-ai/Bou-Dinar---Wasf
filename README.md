@@ -202,6 +202,7 @@ d'autrui**, ni aucun jeu de données collecté sur le web.
 | Le film à décrire et ses sous-titres | La production, qui détient les droits | Celle du film : Wasf n'en tire aucun droit et n'entraîne rien dessus | Accord du producteur obligatoire : sans lui, `wasf preparer` refuse le film. Sa référence (courriel, contrat) passe dans le rapport et les crédits | L'historique de `projet.json` date la préparation, l'approbation et chaque export |
 | Les images envoyées au modèle | Extraites du film : quatre images réduites par pause | Celle du film | Couvertes par l'accord du producteur. Avec Ollama, elles ne quittent pas l'ordinateur | À la préparation (historique de `projet.json`) |
 | Le fichier d'intention | La réalisation | Celle du film | Écrit par la réalisation elle-même | À la préparation (historique de `projet.json`) |
+| Le journal des appels (`appels.jsonl`) | Écrit par Wasf, une ligne par appel au modèle | MIT, comme le code | Sans objet : ni clé, ni consigne, ni image, seulement l'étape, le modèle, les jetons, la durée et le résultat | À chaque appel |
 | Les exemples de style | L'équipe, ou un·e audiodescripteur·rice | Celle de leur auteur·rice | Accord écrit de l'auteur·rice | Date de l'accord écrit |
 | Les voix enregistrées (moteur « humain ») | Les personnes qui prêtent leur voix | Accord d'utilisation écrit | Accord de chaque personne enregistrée | Date de l'enregistrement |
 | Les voix de synthèse | Azure, espeak-ng, ou une voix Piper choisie par l'utilisateur | Conditions de Microsoft ; GPL v3 pour espeak-ng ; licence propre à chaque voix Piper | Sans objet | Sans objet |
@@ -431,6 +432,14 @@ changent souvent : vérifiez la liste de votre fournisseur et passez-le avec `--
 variables `WASF_GEMINI_MODEL`, `WASF_ANTHROPIC_MODEL`, `WASF_OPENAI_MODEL`, `WASF_OLLAMA_MODEL`).
 Un fournisseur peut rediriger un ancien nom vers un nouveau modèle : le rapport de transparence
 et les crédits nomment le modèle que l'API dit avoir utilisé, pas seulement celui demandé.
+
+**Ce que coûte une préparation.** Chaque appel au modèle laisse une ligne dans `appels.jsonl`, à
+côté de `projet.json` : l'étape, le passage, le modèle demandé et celui qui a répondu, les jetons
+envoyés et reçus quand l'API les donne (sinon `null` : jamais estimés), la raison de fin, la durée
+et le résultat. Ni clé, ni consigne, ni image. À la fin, `wasf preparer` en donne le total. Une
+reprise (`--reprendre`) ajoute ses lignes sans redemander un passage déjà écrit. Avec Claude, une
+réponse fait au plus 1 024 jetons, réglables avec `--jetons-max` ; une réponse coupée est signalée
+et notée au journal.
 
 **Attention aux offres gratuites.** Avec un fournisseur en ligne, les images extraites et le texte
 sont soumis à ses conditions. Chez Gemini, par exemple, les contenus envoyés avec l'offre gratuite
@@ -694,6 +703,7 @@ wasf/
 ├── story.py         le récit jusque-là, donné à l'agent avant chaque pause
 ├── prompts.py       consignes envoyées au modèle (fr, ar, aeb)
 ├── providers.py     mock, Gemini, Claude, OpenAI, Ollama
+├── calllog.py       journal des appels au modèle (appels.jsonl) : jetons, durée, résultat
 ├── gaps.py          pauses dans les dialogues (sous-titres ou silences)
 ├── intent.py        intention de la réalisation et accord du producteur
 ├── project.py       projet.json partagé par toutes les étapes
@@ -705,7 +715,7 @@ wasf/
 ├── pipeline.py      étapes « préparer » et « exporter »
 ├── demo.py          clip de démonstration sans droits de tiers
 └── cli.py           commandes wasf demo | preparer | relire | exporter
-tests/               331 tests, dont le format exact des requêtes vers chaque fournisseur
+tests/               356 tests, dont le format exact des requêtes vers chaque fournisseur
 examples/            fichier d'intention commenté
 docs/                éthique, protocole de test des émotions, correctifs des lots 1 et 2, état
                      complet des limites (lot 3), audit de l'agent (9 rapports), captures
@@ -750,6 +760,12 @@ et sa référence est obligatoire), `test_confidence_rewrite.py` (une réécritu
 images ne remonte jamais la note de confiance) et `test_export_mentions.py` (mention de l'IA en
 tête du SRT, crédits qui ne promettent que ce que Wasf tient). L'audit complet, en neuf rapports,
 commence par [`docs/AGENT_ARCHITECTURE_AUDIT.md`](docs/AGENT_ARCHITECTURE_AUDIT.md).
+
+Ceux de la phase 0 du nouvel agent aussi : `test_version_guard.py` (un `projet.json` d'un format
+plus récent n'est ni ouvert ni réenregistré, pour ne rien effacer) et `test_call_log.py` (une ligne
+par appel, aucune clé, une reprise qui ne repaie rien, les jetons lus tels que chaque API les donne,
+la limite de réponse de Claude). Ce qui a été mesuré, et ce qui attend encore un vrai modèle :
+[`docs/BASELINE.md`](docs/BASELINE.md).
 
 `tests/test_emotion_scenarios.py` rejoue huit scènes, plus un regard évité et une scène à deux
 lectures, (conversation, pleurs, colère, sourire qui

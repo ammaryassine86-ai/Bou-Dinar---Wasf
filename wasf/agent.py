@@ -22,7 +22,7 @@ from .emotions import (DEFAULT_MODE, STRICT_HINTS, check_emotions, check_evidenc
 from .prompts import (SECOND_LOOK_PROMPT, SYSTEM_PROMPT, build_draft_prompt,
                       build_revision_prompt, build_second_look_prompt, clean_text,
                       parse_reply, parse_second_look)
-from .providers import MockProvider, Provider
+from .providers import MockProvider, Provider, unwrapped
 from .textnorm import (looks_like_refusal, looks_like_standard_arabic, mentions, script_problem,
                        too_similar)
 
@@ -236,12 +236,12 @@ class DescriberAgent:
         self.emotions_mode = emotions_mode
         self.names = [p.get("nom", "") for p in self.personnages]
         # A simulation sends no observations: that is not a fault to flag.
-        self.structured = not isinstance(provider, MockProvider)
+        self.structured = not isinstance(unwrapped(provider), MockProvider)
         # The second look can be taken by another provider's model, less likely to repeat a
         # mistake; a simulation never takes it.
         self.checker = checker or provider
         self.second_look = (second_look and self.structured
-                            and not isinstance(self.checker, MockProvider))
+                            and not isinstance(unwrapped(self.checker), MockProvider))
         self.log = log
 
     def _checks(self, segment, text: str, previous: str = "",
@@ -272,7 +272,7 @@ class DescriberAgent:
                         or segment.changements_ia or segment.interactions_ia or segment.emotions_ia)
         if not (self.second_look and segment.texte and claims and about_people):
             return []
-        meta = {"mode": "verification", "langue": self.langue}
+        meta = {"mode": "verification", "langue": self.langue, "passage": segment.id}
         try:
             results = parse_second_look(self.checker.generate(
                 SECOND_LOOK_PROMPT, build_second_look_prompt(segment=segment, claims=claims),
@@ -294,7 +294,8 @@ class DescriberAgent:
         continuity: what each named character last showed (continuity.character_memory).
         """
         meta = {"mode": "brouillon", "langue": self.langue, "budget": segment.budget_mots,
-                "a_remarquer": segment.a_remarquer, "a_eviter": segment.a_eviter}
+                "a_remarquer": segment.a_remarquer, "a_eviter": segment.a_eviter,
+                "passage": segment.id}
         prompt = build_draft_prompt(film=self.film, intention_globale=self.intention_globale,
                                     style=self.style, personnages=self.personnages,
                                     segment=segment, langue=self.langue, story=story,

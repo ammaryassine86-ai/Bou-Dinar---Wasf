@@ -77,6 +77,9 @@ def is_fatal(exc: BaseException) -> bool:
 class Provider:
     name = "base"
     model = ""  # the model asked for
+    # What the API said about its last answer: tokens, why it stopped, which model answered.
+    # Filled by each provider when the API gives it; read by the call log (calllog.py).
+    last_call: dict | None = None
 
     def generate(self, system: str, user: str, images: list[bytes] | None = None,
                  meta: dict | None = None) -> str:
@@ -97,8 +100,25 @@ class Provider:
         print(message, flush=True)
 
 
+def unwrapped(provider):
+    """The provider itself, under the call log's wrapper when there is one (calllog.py)."""
+    return getattr(provider, "wrapped", provider)
+
+
 def _b64(data: bytes) -> str:
     return base64.b64encode(data).decode("ascii")
+
+
+def _count(value) -> int | None:
+    """A token count as the API gave it, or None: never a guess."""
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def _reason(value) -> str | None:
+    """Why the model stopped (« end_turn », « max_tokens », « STOP »…), as text."""
+    if value is None:
+        return None
+    return str(getattr(value, "name", None) or value)
 
 
 # --------------------------------------------------------------------------- mock
@@ -139,6 +159,8 @@ class MockProvider(Provider):
 
     def generate(self, system, user, images=None, meta=None):
         self._saw(self.model)
+        self.last_call = {"modele_rendu": self.model, "jetons_entree": None,
+                          "jetons_sortie": None, "fin": "simulation", "essais": 1}
         meta = meta or {}
         langue = meta.get("langue", "fr")
         budget = int(meta.get("budget", 12))
@@ -240,14 +262,26 @@ class GeminiProvider(Provider):
                 self.notify(f"Gemini : {why}, nouvel essai dans {round(seconds)} s…")
                 _wait(seconds)
         self._saw(getattr(response, "model_version", None))
+        usage = getattr(response, "usage_metadata", None)
+        candidates = getattr(response, "candidates", None) or []
+        self.last_call = {
+            "modele_rendu": getattr(response, "model_version", None),
+            "jetons_entree": _count(getattr(usage, "prompt_token_count", None)),
+            "jetons_sortie": _count(getattr(usage, "candidates_token_count", None)),
+            "fin": _reason(getattr(candidates[0], "finish_reason", None)) if candidates else None,
+            "essais": attempt + 1}
         return response.text or ""
 
 
 # --------------------------------------------------------------------------- anthropic
+CLAUDE_MAX_TOKENS = 1024   # room for the whole JSON reply; 400 could cut it (see --jetons-max)
+
+
 class AnthropicProvider(Provider):
     name = "anthropic"
 
-    def __init__(self, model: str | None = None, base_url: str | None = None):
+    def __init__(self, model: str | None = None, base_url: str | None = None,
+                 max_tokens: int | None = None):
         try:
             import anthropic
         except ImportError as exc:
@@ -257,6 +291,10 @@ class AnthropicProvider(Provider):
         kwargs = {"base_url": base_url} if base_url else {}
         self.client = anthropic.Anthropic(**kwargs)
         self.model = model or os.environ.get("WASF_ANTHROPIC_MODEL", DEFAULT_MODELS["anthropic"])
+        self.max_tokens = CLAUDE_MAX_TOKENS if max_tokens is None else max_tokens
+        if not isinstance(self.max_tokens, int) or self.max_tokens < 1:
+            raise ProviderError(f"--jetons-max vaut « {max_tokens} » : donnez un nombre entier "
+                                "positif, par exemple 1024.")
 
     def generate(self, system, user, images=None, meta=None):
         content = [{"type": "image",
@@ -265,11 +303,20 @@ class AnthropicProvider(Provider):
         content.append({"type": "text", "text": user})
         try:
             message = self.client.messages.create(
-                model=self.model, max_tokens=400, system=system,
+                model=self.model, max_tokens=self.max_tokens, system=system,
                 messages=[{"role": "user", "content": content}])
         except Exception as exc:
             raise ProviderError(f"Claude : {exc}", fatal=is_fatal(exc)) from exc
         self._saw(getattr(message, "model", None))
+        usage = getattr(message, "usage", None)
+        stop = _reason(getattr(message, "stop_reason", None))
+        self.last_call = {"modele_rendu": getattr(message, "model", None),
+                          "jetons_entree": _count(getattr(usage, "input_tokens", None)),
+                          "jetons_sortie": _count(getattr(usage, "output_tokens", None)),
+                          "fin": stop, "essais": None}   # the SDK retries on its own, unseen
+        if stop == "max_tokens":
+            self.notify(f"Claude : réponse coupée à {self.max_tokens} jetons. Augmentez "
+                        "--jetons-max si cela se répète (voir appels.jsonl).")
         return "".join(getattr(block, "text", "") for block in message.content)
 
 
@@ -308,6 +355,12 @@ class OpenAIProvider(Provider):
         except Exception as exc:
             raise ProviderError(f"OpenAI : {exc}", fatal=is_fatal(exc)) from exc
         self._saw(getattr(response, "model", None))
+        usage = getattr(response, "usage", None)
+        self.last_call = {"modele_rendu": getattr(response, "model", None),
+                          "jetons_entree": _count(getattr(usage, "prompt_tokens", None)),
+                          "jetons_sortie": _count(getattr(usage, "completion_tokens", None)),
+                          "fin": _reason(getattr(response.choices[0], "finish_reason", None)),
+                          "essais": None}   # the SDK retries on its own, unseen
         return response.choices[0].message.content or ""
 
 
@@ -337,6 +390,10 @@ class OllamaProvider(Provider):
             response.raise_for_status()
             data = response.json()
             self._saw(data.get("model"))
+            self.last_call = {"modele_rendu": data.get("model"),
+                              "jetons_entree": _count(data.get("prompt_eval_count")),
+                              "jetons_sortie": _count(data.get("eval_count")),
+                              "fin": _reason(data.get("done_reason")), "essais": 1}
             return data["message"]["content"]
         except requests.RequestException as exc:
             raise ProviderError(f"Ollama ({self.base_url}) : {exc}. "
@@ -346,14 +403,17 @@ class OllamaProvider(Provider):
             raise ProviderError(f"Ollama : réponse inattendue ({exc}).") from exc
 
 
-def get_provider(name: str, model: str | None = None, base_url: str | None = None) -> Provider:
+def get_provider(name: str, model: str | None = None, base_url: str | None = None,
+                 max_tokens: int | None = None) -> Provider:
+    """max_tokens: the longest answer Claude may give (--jetons-max); the other providers keep
+    their API's own limit."""
     name = (name or "mock").lower()
     if name == "mock":
         return MockProvider()
     if name == "gemini":
         return GeminiProvider(model, base_url)
     if name in ("anthropic", "claude"):
-        return AnthropicProvider(model, base_url)
+        return AnthropicProvider(model, base_url, max_tokens)
     if name == "openai":
         return OpenAIProvider(model, base_url)
     if name == "ollama":

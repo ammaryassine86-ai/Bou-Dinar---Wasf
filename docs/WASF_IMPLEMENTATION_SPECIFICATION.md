@@ -18,6 +18,12 @@ descriptions est inconnue. Les seuls chiffres de ce document sont les mesures de
 l'audit, faites sur un film synthétique de 10 minutes avec la simulation
 (`docs/PERFORMANCE_RELIABILITY_AUDIT.md`). Aucune personne aveugle ou malvoyante n'a évalué Wasf.
 
+**Où en est-on.** La phase 0 est faite pour sa partie code, le 15 novembre 2026 : garde de
+version, journal des appels, limite de réponse de Claude réglable (détails dans
+[`BASELINE.md`](BASELINE.md)). L'essai réel attend un modèle. L'équipe a décidé de ne rien
+filmer : le banc d'essai repose sur des clips synthétiques et, si elle le décide, sur des extraits
+de films sous licence libre (section 9.3).
+
 ## Sommaire
 
 1. [Résumé et feuille de route](#1-résumé-et-feuille-de-route)
@@ -68,7 +74,7 @@ Tout tient dans `projet.json`, plus un journal des appels.
 
 | Phase | Objectif | Résultat attendu | Complexité | Dépend de | Critère d'acceptation principal |
 | --- | --- | --- | --- | --- | --- |
-| 0. Base et mesure | Savoir ce que Wasf produit avec un vrai modèle | Un premier essai réel, un journal des appels, des scènes figées | Faible | Un fournisseur choisi, l'accord écrit des acteurs | Chaque appel a sa ligne au journal ; la suite de tests passe |
+| 0. Base et mesure | Savoir ce que Wasf produit avec un vrai modèle | Journal des appels et garde de version (faits) ; un premier essai réel (en attente d'un modèle) | Faible | Un modèle disponible : Ollama, sans clé, ou une clé d'API | Chaque appel a sa ligne au journal ; la suite de tests passe |
 | 1. Faits prouvés | Relier chaque phrase à des faits, chaque fait à ses images | La chaîne phrase, faits, images, visible dans l'éditeur | Moyenne | 0 | Aucun fait de l'IA sans image, aucune phrase sans fait, sauf signalés |
 | 2. Contexte temporel | Voir ce qui se passe entre deux pauses | Images aux changements depuis la pause précédente ; plans | Moyenne | 1 | Sur des clips de test, un geste fait pendant un dialogue apparaît dans les faits de la pause suivante |
 | 3. Mémoire | Savoir ce que le spectateur sait déjà | Un registre recalculé depuis `projet.json` | Moyenne | 1 | Un fait déjà dit et inchangé n'est jamais redit par l'IA |
@@ -105,19 +111,24 @@ dossier `wasf/`.
 | 11. Contrôle fondé sur les preuves | Une vingtaine de codes de contrôle (`agent.run_checks`, `emotions.check_evidence`), dont `phrase_sans_appui` ; deux réécritures en texte seul au plus, qui ne remontent jamais la confiance ; seconde lecture optionnelle, faite si on veut par un autre fournisseur, mais en question fermée (oui, non, incertain), où seul « non » déclenche une alerte | Tout | Questions ouvertes, « incertain » en alerte [phase 1] ; contrôles fait par fait, étalonnage [phase 6] | Un « juge » IA qui note la qualité générale |
 | 12. Relecture et approbation humaines | Éditeur local (Flask, jeton, hôte vérifié). Valider, ignorer, rouvrir ; une erreur bloque la validation ; un clic seulement pour les textes non modifiés sans alerte, après un échantillon tiré au hasard (10 %, au moins 3 dès 10 passages) validé un par un ; approbation de la réalisation, retirée si un texte ou un nom change. L'export refuse sans signature, sans tous les passages traités, sans approbation, sauf option explicite `--sans-validation-realisateur` (`editor/app.py`, `pipeline.readiness_problems`) | Tout | Montrer la chaîne phrase, faits, images, les faits omis et la raison d'un silence [phases 1 et 5] ; ne plus afficher la note de confiance en pourcentage [phase 6] | |
 
-**Ce que le dépôt ne mesure pas encore** (absences vérifiées) :
+**Ce que le dépôt ne mesurait pas avant la phase 0** (absences vérifiées) :
 
 - les jetons d'entrée et de sortie : aucun fournisseur ne les enregistre (`providers.py`) ;
 - la durée de chaque appel : seules la durée de la rédaction par l'IA, tous passages confondus, et
   celle de l'export sont mesurées (`energy.py`) ;
 - le coût en argent : jamais calculé ;
-- la raison de fin d'une réponse, complète ou coupée : jamais lue, alors que Claude est limité à
-  400 jetons de sortie (`providers.py`) ;
-- les nouvelles tentatives : seul Gemini réessaie, deux fois, après une limite par minute ou des
-  serveurs surchargés ;
+- la raison de fin d'une réponse, complète ou coupée : jamais lue, alors que Claude était limité
+  à 400 jetons de sortie (`providers.py`) ;
+- les nouvelles tentatives : Wasf ne réessaie lui-même qu'avec Gemini, deux fois, après une
+  limite par minute ou des serveurs surchargés ; les SDK d'Anthropic et d'OpenAI réessaient d'eux-mêmes
+  par défaut, deux fois, sans que Wasf le voie ;
 - l'énergie de toute la préparation : CodeCarbon entoure les appels à l'IA et l'export, pas
   l'extraction des images, qui faisait 97 % du temps de préparation dans l'essai de l'audit ; les
   serveurs distants ne sont jamais mesurés, et le rapport le dit (`export.energy_scope`).
+
+La phase 0 a ajouté le journal des appels : pour chaque appel, les jetons et la raison de fin quand
+l'API les donne, la durée et le résultat. La limite de Claude est passée à 1 024 jetons, réglable.
+Le coût en argent et l'énergie de toute la préparation restent à faire (phase 7).
 
 ## 3. L'architecture cible
 
@@ -697,8 +708,8 @@ modèle qui a réellement répondu (`modeles_utilises`).
 | Fournisseur | Modèle par défaut | Images | Sortie JSON imposée | Dans le code | Données |
 | --- | --- | --- | --- | --- | --- |
 | Gemini | `gemini-3.6-flash` | Oui | Oui | Délai de 120 s ; deux nouveaux essais après une limite par minute ou des serveurs surchargés | En ligne ; l'offre gratuite peut réutiliser les données, et Wasf le rappelle |
-| Claude | `claude-haiku-5-5` | Oui | Non, consigne seulement | 400 jetons de sortie au plus ; pas de nouvel essai | En ligne |
-| OpenAI | `gpt-6-luna` | Oui | Non, consigne seulement | Pas de nouvel essai ; température envoyée seulement à un serveur local compatible (`--url`) | En ligne, ou local avec `--url` |
+| Claude | `claude-haiku-5-5` | Oui | Non, consigne seulement | 1 024 jetons de sortie par défaut, réglables avec `--jetons-max` (400 avant la phase 0) ; le SDK réessaie de lui-même | En ligne |
+| OpenAI | `gpt-6-luna` | Oui | Non, consigne seulement | Le SDK réessaie de lui-même ; température envoyée seulement à un serveur local compatible (`--url`) | En ligne, ou local avec `--url` |
 | Ollama | `gemma3` | Oui | Oui | Délai de 600 s ; température 0,4 | Local : les images ne quittent pas l'ordinateur |
 | Simulation | Aucun | Aucune analyse | | Réécrit les notes de la réalisation sans regarder les images, pour tester toute la chaîne | Hors ligne |
 
@@ -717,10 +728,13 @@ d'essai les mesurera.
 
 ### 9.3 Le banc d'essai, avant tout choix de fournisseur
 
-- **Les scènes** : les huit scènes de `docs/TESTS_EMOTIONS.md`, plus les catégories qui manquent
-  (actions rapides, transitions, son qui compte, détail d'arrière-plan qui servira plus tard),
-  tournées par l'équipe avec l'accord écrit des acteurs. Les images des acteurs restent hors du
-  dépôt public ; seules leurs empreintes et les résultats y entrent.
+- **Les scènes** : l'équipe a décidé de ne rien filmer. Le banc repose sur des clips synthétiques
+  fabriqués par FFmpeg (formes, coupes et textes à des instants connus, personne à l'écran), sur le
+  clip de démonstration, et, si l'équipe le décide, sur des extraits de films publiés sous une
+  licence qui autorise l'adaptation, comme Creative Commons BY ; la licence sert alors de référence
+  à l'accord du producteur. Les catégories à couvrir restent celles de `docs/TESTS_EMOTIONS.md`,
+  plus les actions rapides, les transitions, le son qui compte et le détail d'arrière-plan qui
+  servira plus tard. Les clips synthétiques ne servent qu'à la mécanique, jamais à juger la qualité.
 - **Les entrées figées** : mêmes images, mêmes sous-titres, même intention, mêmes consignes, pour
   chaque fournisseur et chaque version de Wasf.
 - **Trois essais** par scène et par configuration, pour connaître la variation d'un essai à l'autre.
@@ -760,21 +774,24 @@ sans l'accord de l'équipe.
   temps et d'échecs, avant de changer quoi que ce soit.
 - **Modules touchés.** `providers.py` (lire les jetons, la raison de fin et la durée que l'API
   renvoie), `pipeline.py` (écrire le journal), `project.py` (garde de version).
-- **Nouveau.** `appels.jsonl` ; un banc de scènes figées.
+- **Nouveau.** `appels.jsonl` ; un banc de clips figés.
 - **Tâches.**
   1. Vérifier la suite de tests (fait le 15 novembre 2026 : 331 tests, 330 passés, 1 sauté
      sans CodeCarbon).
-  2. Ajouter la garde de version (section 4.1), avant toute évolution du format.
-  3. Écrire une ligne au journal pour chaque appel, y compris en échec.
+  2. Ajouter la garde de version (section 4.1), avant toute évolution du format. **Fait.**
+  3. Écrire une ligne au journal pour chaque appel, y compris en échec. **Fait**
+     (`wasf/calllog.py`).
   4. Rendre réglable la limite de 400 jetons de sortie de Claude, et noter une réponse coupée.
-  5. Tourner et figer les scènes du banc (section 9.3).
-  6. Faire un premier essai réel avec la configuration actuelle, trois fois par scène, avec le
+     **Fait** : 1 024 par défaut, `--jetons-max`.
+  5. Constituer et figer le banc sans tournage (section 9.3). À faire.
+  6. Faire un premier essai réel avec la configuration actuelle, trois fois par clip, avec le
      fournisseur que l'équipe choisit : Ollama sur l'ordinateur, ou une clé dans une variable
-     d'environnement, avec une offre qui n'utilise pas les données.
-  7. Remplir à l'aveugle les grilles de `docs/TESTS_EMOTIONS.md` et `docs/BENCHMARK_PROTOCOL.md`.
-- **Dépendances.** Un fournisseur choisi ; l'accord écrit des acteurs.
-- **Risques.** Trop peu de scènes pour conclure (on le dira) ; coût d'un fournisseur en ligne ;
-  images d'acteurs envoyées en ligne.
+     d'environnement, avec une offre qui n'utilise pas les données. En attente d'un modèle.
+  7. Remplir à l'aveugle les grilles de `docs/TESTS_EMOTIONS.md` et `docs/BENCHMARK_PROTOCOL.md`,
+     après l'essai réel.
+- **Dépendances.** Un modèle disponible (Ollama, sans clé, ou une clé d'API).
+- **Risques.** Trop peu de clips pour conclure (on le dira) ; coût d'un fournisseur en ligne ;
+  extraits de films envoyés en ligne (licence et conditions du fournisseur à vérifier).
 - **Tests.** Projet d'un schéma plus récent refusé avec un message clair ; une ligne par appel, y
   compris en échec et à la reprise ; aucune clé dans le journal ; lecture des jetons vérifiée pour
   chaque fournisseur contre les faux serveurs existants (`test_providers_http.py`).
@@ -782,7 +799,8 @@ sans l'accord de l'équipe.
   une reprise n'ajoute aucune ligne pour un passage déjà écrit ; `docs/BASELINE.md` donne, pour
   chaque scène et chaque essai, les mesures brutes et leur variation.
 - **Complexité.** Faible.
-- **Livrables.** Journal des appels, garde de version, `docs/BASELINE.md`.
+- **Livrables.** Journal des appels, garde de version, `docs/BASELINE.md` (faits) ; mesures
+  réelles, après l'essai.
 
 ### Phase 1 : faits prouvés
 
@@ -958,7 +976,7 @@ d'utilité pour elles. Ce document ne la planifie pas.
 
 | Type | Ce qu'on vérifie | Comment | Aujourd'hui |
 | --- | --- | --- | --- |
-| Unitaires | Analyse des réponses, fusion, contraintes, paliers, budget, registre, garde de version | pytest, données écrites à la main | 331 tests pour l'existant |
+| Unitaires | Analyse des réponses, fusion, contraintes, paliers, budget, registre, garde de version | pytest, données écrites à la main | 356 tests depuis la phase 0 |
 | Intégration | Préparer, relire, exporter, sur le clip de démonstration | pytest avec la simulation (`test_pipeline.py`) | Existe |
 | Fournisseurs | Format exact des requêtes, lecture des jetons, erreurs fatales | Faux serveurs locaux (`test_providers_http.py`) | Existe pour le format |
 | Temporels | Coupes, fenêtres, aucun fait d'après la pause, fusion, contradictions | Clips synthétiques générés par FFmpeg, instants connus | À créer |
@@ -1024,20 +1042,17 @@ Shot-by-Shot, et, sur la confiance, Xiong et al.
 
 ## 14. Recommandation
 
-**Commencer par la phase 0.** Toutes les autres phases en dépendent, et aucune ne peut être jugée
-sans elle. Elle est aussi la moins risquée : trois petits changements de code, dont aucun ne touche
-à la façon dont l'agent décrit.
+**La phase 0 d'abord, et sa partie code est faite** (voir [`BASELINE.md`](BASELINE.md)) : garde
+de version, journal des appels, limite de réponse de Claude réglable. Aucun de ces changements ne
+touche à la façon dont l'agent décrit.
 
-Ce qu'elle demande à l'équipe :
+Il lui manque un essai réel. Il attend un modèle : Ollama sur l'ordinateur, qui ne demande ni clé ni
+compte, ou une clé d'API placée dans une variable d'environnement, avec une offre qui n'utilise pas
+les données. Rien ne sera filmé : le banc repose sur des clips synthétiques et, si l'équipe le
+décide, sur des extraits de films sous licence libre.
 
-1. choisir le fournisseur du premier essai : Ollama sur l'ordinateur (local et gratuit), ou une clé
-   d'API dans une variable d'environnement, avec une offre qui n'utilise pas les données ;
-2. tourner les scènes du banc, avec l'accord écrit des acteurs ;
-3. donner son accord aux trois changements de code : garde de version, journal des appels, limite
-   de sortie de Claude réglable.
-
-Ce qu'elle livre : `docs/BASELINE.md`, avec les mesures brutes et leur variation. La phase 1 vient
-ensuite : c'est elle qui rend chaque phrase traçable jusqu'à l'image.
+La phase 1 vient ensuite : c'est elle qui rend chaque phrase traçable jusqu'à l'image. Elle peut
+commencer avant l'essai réel, mais son critère de comparaison avec la phase 0 attendra cet essai.
 
 ## Sources
 
