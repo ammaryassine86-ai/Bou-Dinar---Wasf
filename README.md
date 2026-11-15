@@ -681,6 +681,35 @@ Règles appliquées par le code :
 
 Détails, limites et engagements : [`docs/ETHIQUE_360.md`](docs/ETHIQUE_360.md).
 
+## Sécurité
+
+Wasf tourne sur l'ordinateur de l'équipe : pas de serveur en ligne, pas de compte, pas de base de
+données. Ce que le code protège, et où le vérifier :
+
+| Ce qui est protégé | Comment | Où |
+| --- | --- | --- |
+| **Le projet, face aux autres pages web** | L'éditeur n'écoute que sur cet ordinateur (`127.0.0.1`, `localhost`, `::1` ; `--hote 0.0.0.0` est refusé). Chaque appel porte un jeton de session tiré au hasard à chaque démarrage. Une requête venue d'une autre origine, ou adressée sous un autre nom d'hôte (« DNS rebinding »), est refusée, et la page ne peut pas être affichée dans le cadre d'un autre site | `editor/app.py`, 26 tests dans `tests/test_editor_security.py`, [`docs/LOT1_CORRECTIFS.md`](docs/LOT1_CORRECTIFS.md) (S01, S02) |
+| **Les clés d'API** | Lues seulement dans des variables d'environnement, jamais dans un fichier ; `.env` est exclu de Git. Wasf ne les écrit nulle part, et le journal des appels les masque même dans un message d'erreur | `providers.py`, `calllog.py`, `tests/test_call_log.py` |
+| **Les images du film** | Seules des images réduites partent vers le fournisseur choisi ; avec Ollama sur l'ordinateur, rien ne le quitte. Avec une offre en ligne, Wasf rappelle à chaque préparation qu'une offre gratuite peut réutiliser les données | `media.py`, `pipeline.py` |
+| **Les droits** | Aucun film n'est traité sans l'accord du producteur et sa référence | `intent.check_rights`, `tests/test_consent.py` |
+| **Le fichier du projet** | Enregistrement atomique : une coupure de courant laisse l'ancien fichier ou le nouveau, entier. Un `projet.json` abîmé donne un message clair et reste intact. Un projet d'un format plus récent est refusé, plutôt que réécrit sans ce qu'il contient | `project.py`, `tests/test_checkpoints.py`, `tests/test_project_file.py`, `tests/test_version_guard.py` |
+| **La vidéo exportée** | L'export compare l'empreinte de la vidéo à celle de la préparation, et signale une vidéo remplacée, même par une autre de même durée | `pipeline.py`, `tests/test_film_fingerprint.py` |
+
+**Ce que Wasf ne protège pas**, et qu'il vaut mieux savoir :
+
+- un programme qui tourne déjà sur le même ordinateur : il peut ouvrir l'éditeur comme le
+  navigateur, et il a de toute façon accès aux fichiers du projet. Les protections de l'éditeur
+  visent les autres pages web ;
+- les fichiers du projet (images, textes, voix) ne sont pas chiffrés : ils sont protégés par le
+  compte de l'ordinateur, comme les autres fichiers ;
+- ce qu'un fournisseur en ligne fait des images et des textes reçus relève de ses conditions, que
+  Wasf ne peut pas vérifier : pour un film inédit, utilisez Ollama ou une offre qui exclut la
+  réutilisation des données ;
+- l'éditeur est fait pour une personne sur son ordinateur, pas pour être mis en ligne : il n'a pas
+  de comptes utilisateurs.
+
+Vie privée et données, en détail : [`docs/ETHICS_PRIVACY_AUDIT.md`](docs/ETHICS_PRIVACY_AUDIT.md).
+
 ## Fichiers produits par `wasf exporter`
 
 | Fichier | Contenu |
