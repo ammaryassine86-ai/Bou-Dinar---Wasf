@@ -818,57 +818,6 @@ ce qu'un modèle voit. Pour mesurer ce qu'un vrai modèle voit, sur des scènes 
 descriptions aident vraiment des spectateurs aveugles et malvoyants :
 [`docs/TESTS_EMOTIONS.md`](docs/TESTS_EMOTIONS.md).
 
-## Limites connues
-
-- Les sous-titres dynamiques ne sont pas encore codés : ceux de la vidéo et de la présentation
-  sont des maquettes (voir [Sous-titres dynamiques](#sous-titres-dynamiques-en-préparation)).
-- La simulation `mock` ne voit pas les images : elle sert aux tests et aux démonstrations sans
-  clé, et ses exports l'annoncent.
-- La liste « à éviter » reconnaît les variantes d'écriture d'un mot, pas ses synonymes.
-- Les vérifications de langue sont des règles simples : elles signalent, la réalisation décide.
-- Sans sous-titres, les pauses viennent des silences : moins fiable sous la musique.
-- Les sous-titres d'un film tunisien sont souvent une traduction en français. Les pauses sont
-  bien trouvées, mais la vérification « répète le dialogue » compare des mots : elle ne repère
-  pas une description en derja qui reprend une réplique sous-titrée en français.
-- Les voix de synthèse sont encore faibles en derja : la voix humaine est recommandée.
-- La confiance que l'IA s'attribue est un indice, pas une garantie : l'éditeur la montre comme la
-  note qu'elle se donne, pas comme une probabilité. Un passage non signalé peut contenir une
-  erreur. La réalisation reste responsable de ce qu'elle approuve.
-- Visages et gestes : un modèle peut mal lire un visage, surtout sur quatre images fixes ; un
-  geste très bref entre deux images lui échappe. Wasf ne suit pas les visages d'un plan à
-  l'autre, par choix : la continuité repose sur les noms donnés par la réalisation. Les
-  vérifications comparent ce que le modèle écrit à ce qu'il dit avoir vu ; un geste inventé et
-  noté comme observé passe, sauf si la seconde lecture (au choix) le rejette. Deux modèles
-  peuvent encore se tromper ensemble : c'est la relecture humaine qui reste le filet, et le gain
-  réel de la seconde lecture n'a pas été mesuré. Le choix des images voit ce qui change, pas ce
-  qui compte pour l'histoire : un panoramique rapide, un zoom ou une foule en mouvement peuvent
-  encore éclipser un petit geste. Les listes de mots en arabe et en derja (`wasf/emotions.py`)
-  sont un premier jet : les contrôles d'appuis et de seconde lecture n'en dépendent pas, mais
-  ceux de certitude et de diagnostic, si. Les mots derja encore à vérifier par un·e locuteur·rice
-  natif·ve sont listés dans [`docs/DERJA_A_RELIRE.md`](docs/DERJA_A_RELIRE.md). La justesse sur de
-  vraies scènes n'a pas encore été mesurée (protocole dans `docs/TESTS_EMOTIONS.md`).
-- L'énergie mesurée est locale : celle des serveurs d'un fournisseur en ligne n'est pas incluse.
-  Le rapport le dit (`energie_portee`) et compte les appels au modèle, sans rien estimer.
-- Une erreur qui reviendrait à chaque passage arrête la préparation. Une erreur passagère du
-  fournisseur (quota de la minute, réseau) n'est pas toujours retentée :
-  Wasf attend et réessaie avec Gemini, les bibliothèques de Claude et d'OpenAI réessaient deux fois
-  d'elles-mêmes, Ollama jamais. Un passage qui échoue quand même reste vide et signalé, et
-  `--refaire-echecs` le refait ensuite.
-- La durée affichée pendant la relecture est une estimation (mots ÷ débit) ; seule la vraie voix,
-  mesurée à l'export, fait foi, et elle dépend du moteur de voix choisi.
-- Une modification faite pendant un export est gardée, sauf si l'éditeur l'enregistre dans la
-  fraction de seconde où l'export relit puis réécrit le projet.
-- Le contrôle des voix mesure le son, pas la prononciation : une voix bien audible peut mal dire
-  un mot de derja. Ses seuils (−40 dBFS, 6 dB, 40 %, 1 s) sont des choix de départ, pas encore
-  réglés sur de vrais enregistrements de l'équipe.
-- Wasf ne peut pas savoir qui a fait les fichiers donnés au moteur « humain » : l'équipe peut le
-  déclarer (`--source-voix`, `--voix-de`), et le rapport le reprend comme une déclaration non
-  vérifiée.
-- La vidéo est comparée à celle de la préparation par sa durée et par une empreinte du fichier.
-  Un autre fichier de même durée est signalé sans bloquer l'export, car une copie réencodée du
-  même montage change aussi l'empreinte : à la réalisation de vérifier. Les projets préparés
-  avant ce contrôle n'ont que la durée.
-
 ## Feuille de route
 
 - Le nouvel agent, phase par phase, chaque phrase reliée à ses images et chaque phase mesurée
