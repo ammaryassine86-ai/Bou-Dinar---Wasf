@@ -1,17 +1,4 @@
-"""Vision-language model providers.
 
-All providers expose the same method:
-    generate(system, user, images, meta) -> str (the raw model reply)
-
-- mock      : offline simulation, no AI call (tests, demos without a key)
-- gemini    : Google Gemini API      (pip install google-genai, GEMINI_API_KEY)
-- anthropic : Claude API             (pip install anthropic, ANTHROPIC_API_KEY)
-- openai    : OpenAI or any OpenAI-compatible server (pip install openai, OPENAI_API_KEY)
-- ollama    : local model, images never leave the computer (https://ollama.com)
-
-Models are chosen with --modele or the WASF_<PROVIDER>_MODEL variables;
-check each provider's model list, names change often.
-"""
 from __future__ import annotations
 
 import base64
