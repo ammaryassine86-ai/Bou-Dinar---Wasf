@@ -1,15 +1,4 @@
-"""The describer agent: write -> automatic checks -> revision -> hand-over to a human.
 
-The agent writes the whole track but never publishes anything. For each pause
-it writes a description, checks it against the rules (length, the director's
-"avoid" list in any spelling, repeated dialogue, refusals, the track's
-language, how it names what characters feel), revises it when a text-only
-rewrite can fix it, and logs every step. The model reports what it saw (visible
-signs) apart from what it supposes (emotions, with their evidence and
-certainty), so the director can check one against the other. Passages it is
-unsure about are flagged for the director, who checks a random sample of the
-others one by one, validates the rest in one click and approves the track.
-"""
 from __future__ import annotations
 
 import math
