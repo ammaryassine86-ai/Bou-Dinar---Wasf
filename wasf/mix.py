@@ -1,11 +1,4 @@
-"""Place each spoken description in its pause and lower the film's sound underneath.
 
-The film's sound is mixed a slice at a time (MIX_CHUNK_SECONDS) and written to the output
-files as it goes, so memory no longer grows with the length of the film. The result is the
-same, sample for sample, as mixing the whole film at once: every sample goes through the same
-operations, and the loudness check (a single gain for the whole film when it would clip) is
-measured over the whole film before that gain is applied.
-"""
 from __future__ import annotations
 
 import os
