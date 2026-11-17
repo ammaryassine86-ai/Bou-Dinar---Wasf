@@ -1,10 +1,4 @@
-"""What each named character last showed, carried from passage to passage.
 
-The agent sees the story so far as text; this adds, for each character the director named,
-the gestures, expressions and changes the model last observed, and when. The model can then
-describe what changed instead of describing the same crossed arms again. It relies on the
-model using the names it was given: Wasf does not track faces across shots.
-"""
 from __future__ import annotations
 
 from .textnorm import mentions
