@@ -1,11 +1,4 @@
-"""The director's intent file (YAML with French keys).
 
-It tells the agent what the director wants viewers to notice, what must
-never be revealed, who the characters are, which words the film uses for
-recurring things (lexique), how the track should sound (exemples, written by
-the describer), whether a probable emotion may be named or only its visible
-signs (emotions), and records the producer's permission to process the film.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
