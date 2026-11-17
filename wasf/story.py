@@ -1,9 +1,4 @@
-"""What the agent knows of the story before a pause: earlier dialogue and earlier descriptions.
 
-Only the past goes in, so the agent cannot give away what comes later in the film. No extra
-model call is made: the context is built from the subtitles and from the descriptions already
-drafted, which keeps the energy cost of a film unchanged.
-"""
 from __future__ import annotations
 
 from .gaps import Cue
