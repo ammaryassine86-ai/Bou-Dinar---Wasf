@@ -1,8 +1,4 @@
-"""Text rules behind the automatic checks: spelling-tolerant matching in French and Arabic,
-model refusals, the track's script, Standard Arabic in a Derja track, repeated passages.
 
-Plain rules, no model call. They raise flags or block a passage; the director decides.
-"""
 from __future__ import annotations
 
 import re
