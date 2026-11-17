@@ -1,14 +1,3 @@
-"""Journal des appels aux modèles d'IA : une ligne JSON par appel, dans « appels.jsonl », à côté
-de projet.json.
-
-Ce que chaque ligne garde : l'étape (brouillon, révision, vérification), le passage, le fournisseur,
-le modèle demandé et celui qui a répondu, le nombre d'images, l'empreinte de la requête, les jetons
-et la raison de fin quand l'API les donne, la durée et le résultat. Des jetons que l'API ne donne
-pas valent null : ils ne sont jamais estimés. Ce qu'une ligne ne garde jamais : une clé d'API, le
-texte des consignes, une image.
-
-Le fichier ne fait que grandir : une préparation reprise (--reprendre) ajoute ses lignes aux
-précédentes, et un appel déjà réussi n'y apparaît jamais deux fois, puisqu'il n'est pas refait."""
 
 from __future__ import annotations
 
