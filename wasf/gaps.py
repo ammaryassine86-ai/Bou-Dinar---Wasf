@@ -1,9 +1,4 @@
-"""Find the pauses in the dialogue where a description can be spoken.
 
-Two sources, in order of reliability:
-1. the subtitle file (SRT or WebVTT): pauses = time between two lines;
-2. the soundtrack: pauses = silences found by FFmpeg (less reliable under music).
-"""
 from __future__ import annotations
 
 import math
