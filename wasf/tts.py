@@ -1,12 +1,4 @@
-"""Voices for the descriptions.
 
-Engines:
-- humain : recordings made by the describer (recommended for Derja and for the final film)
-- azure  : Azure AI Speech, incl. Tunisian voices ar-TN-ReemNeural / ar-TN-HediNeural
-- espeak : espeak-ng, offline and free, robotic but fine for working versions
-- piper  : Piper, offline neural voices (check each voice's licence)
-- bip    : a placeholder tone, only for tests
-"""
 from __future__ import annotations
 
 import os
