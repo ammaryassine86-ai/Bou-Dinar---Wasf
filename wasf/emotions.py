@@ -1,15 +1,4 @@
-"""Faces, gestures and body language: what the track may say about emotions.
 
-The vision-language model reads what the actors show; these plain rules (no model call) check
-how the text names it. What is seen comes first (« elle baisse les yeux et serre ses mains »).
-A probable emotion may follow, only next to the visible signs that support it and with a
-nuance (« l'air inquiet »). Certainty and psychological or medical labels are refused on the
-AI's text and flagged on a person's. The director can rule out emotion words altogether with
-the « signes » mode, which keeps Wasf's earlier, strict behaviour.
-
-The word lists are a first version; the Arabic and Derja ones in particular are for native
-speakers to complete. A missing word lets a passage through without a flag: it never blocks one.
-"""
 from __future__ import annotations
 
 import re
